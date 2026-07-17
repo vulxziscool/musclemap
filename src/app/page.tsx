@@ -12,6 +12,8 @@ import PersonalProfile from "@/components/PersonalProfile";
 import CardioTracker from "@/components/CardioTracker";
 import CalorieCounter from "@/components/CalorieCounter";
 import AIAssistant from "@/components/AIAssistant";
+import Achievements from "@/components/Achievements";
+import ExerciseHistory from "@/components/ExerciseHistory";
 import DeviceSync from "@/components/DeviceSync";
 import { RecoveryState, MUSCLE_MAP, REGIONS, type RegionId } from "@/lib/muscles";
 
@@ -33,10 +35,19 @@ export default function DashboardPage() {
   const [showRadar, setShowRadar] = useState(false);
   const [loading, setLoading] = useState(true);
   const [mobileTab, setMobileTab] = useState<MobileTab>("map");
+  const [userBodyWeight, setUserBodyWeight] = useState<number | null>(null);
+  const [userGender, setUserGender] = useState<string | null>(null);
 
   const fetchRecovery = useCallback(async () => { try { const r = await fetch("/api/recovery"); if (r.ok) { const d: RecoveryState[] = await r.json(); const m: Record<string, RecoveryState> = {}; d.forEach((x) => { m[x.muscleId] = x; }); setRecovery(m); } } catch { /* */ } }, []);
   const fetchWorkouts = useCallback(async () => { try { const r = await fetch("/api/workouts"); if (r.ok) setWorkouts(await r.json()); } catch { /* */ } finally { setLoading(false); } }, []);
-  useEffect(() => { fetch("/api/setup").finally(() => { fetchRecovery(); fetchWorkouts(); }); }, [fetchRecovery, fetchWorkouts]);
+  const fetchProfile = useCallback(async () => {
+    try {
+      const [pRes, mRes] = await Promise.all([fetch("/api/profile"), fetch("/api/metrics")]);
+      if (pRes.ok) { const p = await pRes.json(); if (p) setUserGender(p.gender); }
+      if (mRes.ok) { const m = await mRes.json(); if (m.length > 0) { const last = m[m.length - 1]; if (last.weight) setUserBodyWeight(last.weight); } }
+    } catch { /* */ }
+  }, []);
+  useEffect(() => { fetch("/api/setup").finally(() => { fetchRecovery(); fetchWorkouts(); fetchProfile(); }); }, [fetchRecovery, fetchWorkouts, fetchProfile]);
   useEffect(() => { const id = setInterval(fetchRecovery, 30000); return () => clearInterval(id); }, [fetchRecovery]);
 
   const handleMuscleClick = (id: string) => { setSelectedMuscle((p) => (p === id ? null : id)); setSelectedWorkout(null); };
@@ -54,6 +65,16 @@ export default function DashboardPage() {
   const totalVolume = weekWorkouts.reduce((s, w) => s + w.exercises.reduce((a, e) => a + e.sets * e.reps, 0), 0);
   const recoveringCount = Object.values(recovery).filter((r) => r.status === "just_trained" || r.status === "recovering" || r.status === "almost_ready").length;
   const readyCount = Object.values(recovery).filter((r) => r.status === "fully_recovered" || r.status === "not_trained").length;
+
+  // Total weight ever lifted (lbs)
+  const totalWeightLifted = useMemo(() => {
+    return workouts.reduce((total, w) => {
+      return total + w.exercises.reduce((s, e) => {
+        const wt = e.weight ? parseFloat(e.weight.replace(/[^0-9.]/g, "")) : 0;
+        return s + (isNaN(wt) ? 0 : wt * e.sets * e.reps);
+      }, 0);
+    }, 0);
+  }, [workouts]);
 
   const FILTERS: { id: FilterId; label: string }[] = [{ id: "all", label: "All" }, { id: "upper_push", label: "Push" }, { id: "upper_pull", label: "Pull" }, { id: "lower_body", label: "Legs" }, { id: "core", label: "Core" }];
 
@@ -92,7 +113,7 @@ export default function DashboardPage() {
           {[
             { l: "Week", v: weekWorkouts.length },
             { l: "Total", v: workouts.length },
-            { l: "Volume", v: totalVolume > 999 ? `${(totalVolume/1000).toFixed(1)}k` : String(totalVolume) },
+            { l: "Lbs Lifted", v: totalWeightLifted > 999999 ? `${(totalWeightLifted/1000000).toFixed(1)}M` : totalWeightLifted > 999 ? `${(totalWeightLifted/1000).toFixed(1)}K` : String(Math.round(totalWeightLifted)) },
             { l: "Healing", v: recoveringCount },
             { l: "Ready", v: readyCount },
             { l: "Exercises", v: workouts.reduce((s, w) => s + w.exercises.length, 0) },
@@ -132,6 +153,8 @@ export default function DashboardPage() {
             {selectedMuscle && <MuscleInspector muscleId={selectedMuscle} recovery={recovery[selectedMuscle] || null} onTrain={handleTrain} />}
             {showRadar && <RecoveryRadar recovery={recovery} />}
             {!selectedMuscle && !showRadar && <div className="glass-card rounded-xl p-5 text-center"><p className="text-dark-500 text-xs">Select a muscle on the body map.</p></div>}
+            <Achievements workouts={workouts} totalWeight={totalWeightLifted} />
+            <ExerciseHistory workouts={workouts} bodyWeight={userBodyWeight} gender={userGender} />
             <AIAssistant />
             <ProgressCharts />
             <CardioTracker />
@@ -180,7 +203,7 @@ export default function DashboardPage() {
 
           {mobileTab === "nutrition" && <div className="space-y-2 animate-fade-in"><CalorieCounter /></div>}
 
-          {mobileTab === "progress" && <div className="space-y-2 animate-fade-in"><PersonalProfile /><ProgressCharts /></div>}
+          {mobileTab === "progress" && <div className="space-y-2 animate-fade-in"><PersonalProfile /><Achievements workouts={workouts} totalWeight={totalWeightLifted} /><ExerciseHistory workouts={workouts} bodyWeight={userBodyWeight} gender={userGender} /><ProgressCharts /></div>}
 
           {mobileTab === "more" && <div className="space-y-2 animate-fade-in"><AIAssistant /><RecoveryRadar recovery={recovery} /><DeviceSync /></div>}
         </div>
