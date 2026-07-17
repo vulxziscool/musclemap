@@ -58,7 +58,7 @@ export default function DashboardPage() {
   const FILTERS: { id: FilterId; label: string }[] = [{ id: "all", label: "All" }, { id: "upper_push", label: "Push" }, { id: "upper_pull", label: "Pull" }, { id: "lower_body", label: "Legs" }, { id: "core", label: "Core" }];
 
   return (
-    <div className="min-h-[100dvh] pb-14 lg:pb-0">
+    <div className="min-h-[100dvh] pb-24 lg:pb-0">
       {/* ─── DESKTOP HEADER ─── */}
       <header className="sticky top-0 z-50 glass border-b border-white/[.03] hidden lg:block">
         <div className="max-w-[1440px] mx-auto px-6 h-14 flex items-center justify-between">
@@ -73,15 +73,15 @@ export default function DashboardPage() {
         </div>
       </header>
 
-      {/* ─── MOBILE HEADER — tiny ─── */}
-      <header className="sticky top-0 z-50 glass border-b border-white/[.03] lg:hidden">
-        <div className="px-3 h-10 flex items-center justify-between">
+      {/* ─── MOBILE HEADER — with safe area for notch ─── */}
+      <header className="sticky top-0 z-50 glass border-b border-white/[.03] lg:hidden" style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}>
+        <div className="px-3 h-11 flex items-center justify-between">
           <div className="flex items-center gap-1.5">
             <div className="w-6 h-6 rounded bg-brand-600 flex items-center justify-center"><svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" /></svg></div>
             <span className="text-white font-semibold text-[12px] tracking-tight">MuscleMap</span>
           </div>
-          <button onClick={() => { setShowLogger(true); setPreselectedMuscle(null); setMobileTab("workouts"); }} className="h-6 px-2.5 bg-brand-600 text-white rounded text-[10px] font-semibold flex items-center gap-1">
-            <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>Log
+          <button onClick={() => { setShowLogger(true); setPreselectedMuscle(null); setMobileTab("workouts"); }} className="h-7 px-3 bg-brand-600 text-white rounded-md text-[10px] font-semibold flex items-center gap-1">
+            <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>Log Workout
           </button>
         </div>
       </header>
