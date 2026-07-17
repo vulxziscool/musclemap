@@ -13,6 +13,8 @@ interface ExerciseRow {
   sets: number;
   reps: number;
   setReps: number[];
+  setWeights: string[];
+  setFailure: boolean[];
   weight: string;
   restTime: number;
   equipment: string;
@@ -38,14 +40,17 @@ function createEmptyExercise(preselectedMuscle?: string): ExerciseRow {
     ? EXERCISE_LIBRARY.filter((e) => e.primaryMuscle === preselectedMuscle)
     : [];
   const defaultEx = filteredExercises[0] || null;
+  const s = defaultEx?.defaultSets || 3;
   return {
     id: Math.random().toString(36).slice(2),
     name: defaultEx?.name || "",
     primaryMuscle: preselectedMuscle || "",
     secondaryMuscles: defaultEx?.secondaryMuscles || [],
-    sets: defaultEx?.defaultSets || 3,
+    sets: s,
     reps: defaultEx?.defaultReps || 10,
-    setReps: Array(defaultEx?.defaultSets || 3).fill(defaultEx?.defaultReps || 10),
+    setReps: Array(s).fill(defaultEx?.defaultReps || 10),
+    setWeights: Array(s).fill(""),
+    setFailure: Array(s).fill(false),
     weight: "",
     restTime: defaultEx?.defaultRest || 90,
     equipment: defaultEx?.equipment || "",
@@ -80,6 +85,8 @@ export default function WorkoutLogger({ preselectedMuscle, onSaved, onCancel }: 
         if (updates.sets !== undefined) {
           const newSets = updates.sets;
           updated.setReps = Array(newSets).fill(0).map((_, i) => ex.setReps[i] ?? ex.reps);
+          updated.setWeights = Array(newSets).fill("").map((_, i) => ex.setWeights[i] ?? ex.weight);
+          updated.setFailure = Array(newSets).fill(false).map((_, i) => ex.setFailure[i] ?? false);
         }
         return updated;
       })
@@ -92,6 +99,7 @@ export default function WorkoutLogger({ preselectedMuscle, onSaved, onCancel }: 
       updateExercise(rowId, {
         name: def.name, primaryMuscle: def.primaryMuscle, secondaryMuscles: def.secondaryMuscles,
         sets: def.defaultSets, reps: def.defaultReps, setReps: Array(def.defaultSets).fill(def.defaultReps),
+        setWeights: Array(def.defaultSets).fill(""), setFailure: Array(def.defaultSets).fill(false),
         restTime: def.defaultRest, equipment: def.equipment, category: def.category,
       });
     } else {
@@ -116,11 +124,25 @@ export default function WorkoutLogger({ preselectedMuscle, onSaved, onCancel }: 
         body: JSON.stringify({
           name: name.trim(), date, time: time + ":00",
           duration: parseInt(duration) || null, notes: notes.trim() || null,
-          exercises: validExercises.map((ex) => ({
-            name: ex.name, primaryMuscle: ex.primaryMuscle, secondaryMuscles: ex.secondaryMuscles,
-            sets: ex.sets, reps: ex.reps, weight: ex.weight || null, restTime: ex.restTime,
-            equipment: ex.equipment, category: ex.category,
-          })),
+          exercises: validExercises.map((ex) => {
+            const setWts = ex.setWeights.map((w) => parseFloat(w.replace(/[^0-9.]/g, "")) || 0);
+            const maxSetWeight = Math.max(...setWts, 0);
+            const mainWeight = ex.weight ? parseFloat(ex.weight.replace(/[^0-9.]/g, "")) || 0 : 0;
+            const bestWeight = maxSetWeight > 0 ? maxSetWeight : mainWeight;
+            const weightStr = bestWeight > 0 ? `${bestWeight} lbs` : (ex.weight || null);
+            // Build per-set details array
+            const setDetails = ex.setReps.map((reps, i) => ({
+              set: i + 1,
+              reps,
+              weight: ex.setWeights[i] || ex.weight || "",
+              failure: ex.setFailure[i] || false,
+            }));
+            return {
+              name: ex.name, primaryMuscle: ex.primaryMuscle, secondaryMuscles: ex.secondaryMuscles,
+              sets: ex.sets, reps: ex.reps, weight: weightStr, restTime: ex.restTime,
+              equipment: ex.equipment, category: ex.category, setDetails: JSON.stringify(setDetails),
+            };
+          }),
         }),
       });
       if (!res.ok) { const data = await res.json(); throw new Error(data.error || "Failed to save"); }
@@ -355,29 +377,47 @@ function ExerciseInput({ exercise, index, searchTerm, onSearchChange, onUpdate, 
       {/* Quick templates */}
       <div className="flex gap-1 mb-2.5">
         {QUICK_TEMPLATES.map((t) => (
-          <button key={t.label} onClick={() => onUpdate({ sets: t.sets, reps: t.reps, setReps: Array(t.sets).fill(t.reps) })} className="text-[9px] font-medium px-2 py-0.5 rounded bg-white/[.03] text-dark-500 hover:bg-white/[.06] hover:text-dark-300 transition-colors border border-white/[.04]">{t.label}</button>
+          <button key={t.label} onClick={() => onUpdate({ sets: t.sets, reps: t.reps, setReps: Array(t.sets).fill(t.reps), setWeights: Array(t.sets).fill(""), setFailure: Array(t.sets).fill(false) })} className="text-[9px] font-medium px-2 py-0.5 rounded bg-white/[.03] text-dark-500 hover:bg-white/[.06] hover:text-dark-300 transition-colors border border-white/[.04]">{t.label}</button>
         ))}
       </div>
 
-      {/* Set-by-set reps — steppers */}
+      {/* Per-set details — reps + weight for each set */}
       <div className="mb-3">
-        <label className="text-dark-600 text-[9px] lg:text-[10px] uppercase tracking-wider font-medium mb-1 block">Per-Set Reps</label>
-        <div className="flex gap-1 flex-wrap">
+        <label className="text-dark-600 text-[9px] lg:text-[10px] uppercase tracking-wider font-medium mb-1 block">Per-Set Details</label>
+        <div className="space-y-1">
           {exercise.setReps.map((rep, i) => (
-            <div key={i} className="flex flex-col items-center gap-px">
-              <span className="text-[8px] text-dark-600 font-medium">S{i + 1}</span>
-              <div className="flex items-center glass-inset rounded overflow-hidden h-6">
-                <button onClick={() => { const a = [...exercise.setReps]; a[i] = Math.max(0, rep - 1); onUpdate({ setReps: a }); }} className="w-5 h-full flex items-center justify-center text-dark-500 hover:text-white hover:bg-white/[.06] active:bg-white/10" type="button">
+            <div key={i} className="flex items-center gap-1 glass-inset rounded p-1">
+              <span className="text-[7px] text-dark-500 font-bold w-3 text-center shrink-0">S{i + 1}</span>
+              {/* Reps stepper */}
+              <div className="flex items-center rounded overflow-hidden h-6 bg-black/20 flex-1">
+                <button onClick={() => { const a = [...exercise.setReps]; a[i] = Math.max(0, rep - 1); onUpdate({ setReps: a }); }} className="w-5 h-full flex items-center justify-center text-dark-500 hover:text-white active:bg-white/10" type="button">
                   <svg className="w-2 h-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" d="M5 12h14" /></svg>
                 </button>
                 <input type="text" inputMode="numeric" value={rep}
                   onChange={(e) => { const raw = e.target.value.replace(/[^0-9]/g, ""); const a = [...exercise.setReps]; a[i] = raw === "" ? 0 : parseInt(raw); onUpdate({ setReps: a }); }}
                   onFocus={(e) => e.target.select()}
-                  className="w-7 bg-transparent text-center text-white text-[10px] font-semibold tabular-nums outline-none border-none" />
-                <button onClick={() => { const a = [...exercise.setReps]; a[i] = rep + 1; onUpdate({ setReps: a }); }} className="w-5 h-full flex items-center justify-center text-dark-500 hover:text-white hover:bg-white/[.06] active:bg-white/10" type="button">
+                  className="w-6 bg-transparent text-center text-white text-[10px] font-semibold tabular-nums outline-none border-none" />
+                <button onClick={() => { const a = [...exercise.setReps]; a[i] = rep + 1; onUpdate({ setReps: a }); }} className="w-5 h-full flex items-center justify-center text-dark-500 hover:text-white active:bg-white/10" type="button">
                   <svg className="w-2 h-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" d="M12 5v14M5 12h14" /></svg>
                 </button>
+                <span className="text-[6px] text-dark-600 pr-0.5">reps</span>
               </div>
+              {/* Weight input */}
+              <div className="flex items-center rounded overflow-hidden h-6 bg-black/20 w-16 shrink-0">
+                <input type="text" inputMode="decimal"
+                  value={exercise.setWeights[i] || ""}
+                  onChange={(e) => { const a = [...exercise.setWeights]; a[i] = e.target.value; onUpdate({ setWeights: a }); }}
+                  onFocus={(e) => e.target.select()}
+                  placeholder={exercise.weight || "lbs"}
+                  className="flex-1 min-w-0 bg-transparent text-center text-white text-[10px] font-semibold tabular-nums outline-none border-none placeholder:text-dark-700" />
+                <span className="text-[6px] text-dark-600 pr-0.5">lb</span>
+              </div>
+              {/* Failure toggle */}
+              <button type="button" onClick={() => { const a = [...exercise.setFailure]; a[i] = !a[i]; onUpdate({ setFailure: a }); }}
+                className={`shrink-0 h-6 w-6 rounded flex items-center justify-center text-[7px] font-bold transition-all ${exercise.setFailure[i] ? "bg-red-500/20 text-red-400 ring-1 ring-red-500/30" : "bg-black/15 text-dark-700"}`}
+                title={exercise.setFailure[i] ? "Taken to failure" : "Mark as failure"}>
+                F
+              </button>
             </div>
           ))}
         </div>

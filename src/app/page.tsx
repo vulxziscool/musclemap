@@ -52,7 +52,7 @@ export default function DashboardPage() {
 
   const handleMuscleClick = (id: string) => { setSelectedMuscle((p) => (p === id ? null : id)); setSelectedWorkout(null); };
   const handleTrain = (muscleId: string) => { setPreselectedMuscle(muscleId); setShowLogger(true); setSelectedMuscle(null); setMobileTab("workouts"); };
-  const handleWorkoutSelect = (wid: number) => { if (selectedWorkout === wid) setSelectedWorkout(null); else { setSelectedWorkout(wid); setSelectedMuscle(null); setMobileTab("map"); } };
+  const handleWorkoutSelect = (wid: number) => { if (selectedWorkout === wid) setSelectedWorkout(null); else { setSelectedWorkout(wid); setSelectedMuscle(null); } };
   const handleDelete = async (id: number) => { if (!confirm("Delete this workout?")) return; try { await fetch(`/api/workouts/${id}`, { method: "DELETE" }); setWorkouts((p) => p.filter((w) => w.id !== id)); if (selectedWorkout === id) setSelectedWorkout(null); fetchRecovery(); } catch { /* */ } };
   const loadDemo = async () => { setLoading(true); try { await fetch("/api/demo", { method: "POST" }); await fetchWorkouts(); await fetchRecovery(); } catch { /* */ } finally { setLoading(false); } };
   const handleSaved = () => { setShowLogger(false); setPreselectedMuscle(null); fetchWorkouts(); fetchRecovery(); };

@@ -43,8 +43,10 @@ export async function GET() {
           rest_time_seconds INTEGER,
           equipment TEXT,
           category TEXT,
+          set_details TEXT DEFAULT '[]',
           created_at TIMESTAMP DEFAULT NOW() NOT NULL
         );
+        ALTER TABLE exercises ADD COLUMN IF NOT EXISTS set_details TEXT DEFAULT '[]';
 
         CREATE TABLE IF NOT EXISTS body_metrics (
           id SERIAL PRIMARY KEY,

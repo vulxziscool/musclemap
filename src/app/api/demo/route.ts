@@ -52,7 +52,17 @@ export async function POST() {
 
     for (const w of demoWorkouts) {
       const [workout] = await db.insert(workouts).values({ name: w.name, date: w.date, time: w.time, duration: w.duration, notes: w.notes }).returning();
-      await db.insert(exercises).values(w.exercises.map((ex) => ({ workoutId: workout.id, name: ex.name, primaryMuscle: ex.primaryMuscle, secondaryMuscles: JSON.stringify(ex.secondaryMuscles), sets: ex.sets, reps: ex.reps, weight: ex.weight, restTime: ex.restTime, equipment: ex.equipment, category: ex.category })));
+      await db.insert(exercises).values(w.exercises.map((ex) => {
+        // Generate realistic per-set details
+        const baseWt = parseFloat(ex.weight.replace(/[^0-9.]/g, "")) || 0;
+        const details = Array.from({ length: ex.sets }, (_, i) => ({
+          set: i + 1,
+          reps: i === ex.sets - 1 ? Math.max(ex.reps - 2, 3) : ex.reps,
+          weight: baseWt > 0 ? `${baseWt + (i < 2 ? 0 : 5 * (i - 1))}` : ex.weight,
+          failure: i === ex.sets - 1,
+        }));
+        return { workoutId: workout.id, name: ex.name, primaryMuscle: ex.primaryMuscle, secondaryMuscles: JSON.stringify(ex.secondaryMuscles), sets: ex.sets, reps: ex.reps, weight: ex.weight, restTime: ex.restTime, equipment: ex.equipment, category: ex.category, setDetails: JSON.stringify(details) };
+      }));
     }
 
     // Body metrics — last 30 days

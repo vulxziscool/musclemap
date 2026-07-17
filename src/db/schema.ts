@@ -35,6 +35,7 @@ export const exercises = pgTable("exercises", {
   restTime: integer("rest_time_seconds"),
   equipment: text("equipment"),
   category: text("category"),
+  setDetails: text("set_details").default("[]"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

@@ -21,6 +21,7 @@ export async function GET() {
         .map((e) => ({
           ...e,
           secondaryMuscles: JSON.parse(e.secondaryMuscles || "[]"),
+          setDetails: JSON.parse(e.setDetails || "[]"),
         })),
     }));
 
@@ -70,6 +71,7 @@ export async function POST(request: NextRequest) {
           restTime?: number;
           equipment?: string;
           category?: string;
+          setDetails?: string;
         }) => ({
           workoutId: workout.id,
           name: ex.name,
@@ -81,6 +83,7 @@ export async function POST(request: NextRequest) {
           restTime: ex.restTime || null,
           equipment: ex.equipment || null,
           category: ex.category || null,
+          setDetails: ex.setDetails || "[]",
         }))
       )
       .returning();
