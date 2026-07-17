@@ -38,6 +38,10 @@ body {
   -moz-osx-font-smoothing: grayscale;
   font-size: 14px;
 }
+
+/* Prevent ANY horizontal overflow on mobile */
+html, body { max-width: 100vw; }
+* { box-sizing: border-box; }
 body::before {
   content: "";
   position: fixed;
@@ -92,6 +96,10 @@ body::before {
 .scrollbar-thin::-webkit-scrollbar { width: 2px; }
 .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
 .scrollbar-thin::-webkit-scrollbar-thumb { background: rgba(148,163,184,.1); border-radius: 99px; }
+
+/* Hide scrollbar but keep scroll */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
 /* Pills — compact on mobile */
 .pill-group {

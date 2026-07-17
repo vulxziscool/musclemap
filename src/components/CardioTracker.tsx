@@ -31,22 +31,22 @@ export default function CardioTracker() {
   return (
     <div className="glass-card rounded-xl overflow-hidden">
       <div className="h-0.5 bg-gradient-to-r from-red-500 to-transparent" />
-      <div className="p-4">
-        <div className="flex items-center gap-2.5 mb-4">
-          <div className="w-8 h-8 rounded-lg bg-red-500/10 flex items-center justify-center">
-            <svg className="w-4 h-4 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg>
+      <div className="p-3">
+        <div className="flex items-center gap-2 mb-3">
+          <div className="w-7 h-7 rounded-md bg-red-500/10 flex items-center justify-center">
+            <svg className="w-3.5 h-3.5 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg>
           </div>
           <div>
-            <h3 className="text-white font-semibold text-[14px] tracking-tight">Cardio Tracker</h3>
-            <p className="text-dark-600 text-[10px]">{CARDIO_ACTIVITIES.length} activities across {CARDIO_CATEGORIES.length} categories</p>
+            <h3 className="text-white font-semibold text-[12px] lg:text-[14px] tracking-tight">Cardio Tracker</h3>
+            <p className="text-dark-600 text-[9px]">{CARDIO_ACTIVITIES.length} activities</p>
           </div>
         </div>
 
-        {/* Category pills */}
-        <div className="flex flex-wrap gap-1 mb-3">
+        {/* Category pills — scrollable */}
+        <div className="flex gap-1 mb-2 overflow-x-auto no-scrollbar">
           {CARDIO_CATEGORIES.map((c) => (
             <button key={c.id} onClick={() => { setSelectedCat(c.id); setSelectedActivity(null); }}
-              className={`text-[10px] font-medium px-2 py-1 rounded-md transition-all ${selectedCat === c.id ? "bg-red-500/15 text-red-400" : "text-dark-500 hover:text-dark-300 bg-white/[.02]"}`}>
+              className={`shrink-0 text-[9px] font-medium px-2 py-1 rounded transition-all ${selectedCat === c.id ? "bg-red-500/15 text-red-400" : "text-dark-500 hover:text-dark-300 bg-white/[.02]"}`}>
               {c.label}
             </button>
           ))}

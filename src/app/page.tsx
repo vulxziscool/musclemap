@@ -86,9 +86,9 @@ export default function DashboardPage() {
         </div>
       </header>
 
-      <main className="max-w-[1440px] mx-auto px-2.5 lg:px-6 py-2 lg:py-5">
+      <main className="max-w-[1440px] mx-auto px-2 lg:px-6 py-2 lg:py-5 overflow-x-hidden">
         {/* ─── STATS — tiny on mobile ─── */}
-        <div className="grid grid-cols-3 lg:grid-cols-6 gap-1.5 lg:gap-3 mb-2.5 lg:mb-5">
+        <div className="grid grid-cols-3 lg:grid-cols-6 gap-1 lg:gap-3 mb-2 lg:mb-5">
           {[
             { l: "Week", v: weekWorkouts.length },
             { l: "Total", v: workouts.length },
@@ -97,9 +97,9 @@ export default function DashboardPage() {
             { l: "Ready", v: readyCount },
             { l: "Exercises", v: workouts.reduce((s, w) => s + w.exercises.length, 0) },
           ].map((s, i) => (
-            <div key={s.l} className={`glass-card rounded-lg p-2 lg:p-4 ${i > 2 ? "hidden lg:block" : ""}`}>
-              <div className="text-white font-bold text-sm lg:text-xl tabular-nums leading-none">{s.v}</div>
-              <div className="text-dark-600 text-[8px] lg:text-[10px] font-medium uppercase tracking-wider mt-0.5">{s.l}</div>
+            <div key={s.l} className={`glass-card rounded p-1.5 lg:p-4 ${i > 2 ? "hidden lg:block" : ""}`}>
+              <div className="text-white font-bold text-[13px] lg:text-xl tabular-nums leading-none">{s.v}</div>
+              <div className="text-dark-600 text-[7px] lg:text-[10px] font-medium uppercase tracking-wider mt-px">{s.l}</div>
             </div>
           ))}
         </div>
@@ -140,18 +140,26 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* ─── MOBILE LAYOUT — compact ─── */}
-        <div className="lg:hidden">
+        {/* ─── MOBILE LAYOUT ─── */}
+        <div className="lg:hidden overflow-x-hidden">
           {mobileTab === "map" && (
             <div className="space-y-2 animate-fade-in">
               <div className="glass-card rounded-lg p-2">
-                <div className="flex items-center justify-between mb-1.5">
-                  <div className="pill-group">{FILTERS.map((f) => <button key={f.id} onClick={() => setFilter(f.id)} className={`pill-btn ${filter === f.id ? "active" : ""}`}>{f.label}</button>)}</div>
-                  <div className="pill-group"><button onClick={() => setView("front")} className={`pill-btn ${view === "front" ? "active" : ""}`}>F</button><button onClick={() => setView("back")} className={`pill-btn ${view === "back" ? "active" : ""}`}>B</button></div>
+                {/* Filters — scrollable row */}
+                <div className="flex gap-1 mb-1.5 overflow-x-auto no-scrollbar">
+                  {FILTERS.map((f) => (
+                    <button key={f.id} onClick={() => setFilter(f.id)}
+                      className={`shrink-0 px-2 py-1 rounded text-[9px] font-medium transition-all ${filter === f.id ? "bg-brand-600 text-white" : "bg-white/[.04] text-dark-500"}`}>
+                      {f.label}
+                    </button>
+                  ))}
+                  <div className="shrink-0 w-px bg-white/[.06] mx-0.5" />
+                  <button onClick={() => setView("front")} className={`shrink-0 px-2 py-1 rounded text-[9px] font-medium transition-all ${view === "front" ? "bg-brand-600 text-white" : "bg-white/[.04] text-dark-500"}`}>Front</button>
+                  <button onClick={() => setView("back")} className={`shrink-0 px-2 py-1 rounded text-[9px] font-medium transition-all ${view === "back" ? "bg-brand-600 text-white" : "bg-white/[.04] text-dark-500"}`}>Back</button>
                 </div>
                 {selectedWorkout && <div className="text-center mb-1 animate-fade-in"><span className="inline-flex items-center gap-1 text-[9px] font-medium text-orange-300 bg-orange-500/8 px-2 py-0.5 rounded-full"><span className="w-1 h-1 rounded-full bg-orange-400" />{workouts.find((w) => w.id === selectedWorkout)?.name}</span></div>}
-                <div className="body-map-container flex justify-center"><div className="w-full max-w-[220px] body-flip-enter" key={view}>{view === "front" ? <BodyMapFront recovery={recovery} hoveredMuscle={hoveredMuscle} onHover={setHoveredMuscle} onClick={handleMuscleClick} dimmedMuscles={dimmedMuscles} highlightedMuscles={highlightedMuscles} /> : <BodyMapBack recovery={recovery} hoveredMuscle={hoveredMuscle} onHover={setHoveredMuscle} onClick={handleMuscleClick} dimmedMuscles={dimmedMuscles} highlightedMuscles={highlightedMuscles} />}</div></div>
-                <div className="flex flex-wrap justify-center gap-x-2.5 gap-y-0.5 mt-1.5 pt-1.5 border-t border-white/[.03]">{[{ c: "#ef4444", l: "Trained" }, { c: "#f59e0b", l: "Healing" }, { c: "#22c55e", l: "Almost" }, { c: "#3b82f6", l: "Ready" }, { c: "#6b7280", l: "New" }].map((i) => <div key={i.l} className="flex items-center gap-0.5"><div className="w-1 h-1 rounded-full" style={{ backgroundColor: i.c }} /><span className="text-[8px] text-dark-600">{i.l}</span></div>)}</div>
+                <div className="flex justify-center"><div className="w-[60vw] max-w-[240px] body-flip-enter" key={view}>{view === "front" ? <BodyMapFront recovery={recovery} hoveredMuscle={hoveredMuscle} onHover={setHoveredMuscle} onClick={handleMuscleClick} dimmedMuscles={dimmedMuscles} highlightedMuscles={highlightedMuscles} /> : <BodyMapBack recovery={recovery} hoveredMuscle={hoveredMuscle} onHover={setHoveredMuscle} onClick={handleMuscleClick} dimmedMuscles={dimmedMuscles} highlightedMuscles={highlightedMuscles} />}</div></div>
+                <div className="flex justify-center gap-2 mt-1 pt-1 border-t border-white/[.03]">{[{ c: "#ef4444", l: "Trained" }, { c: "#f59e0b", l: "Healing" }, { c: "#22c55e", l: "Almost" }, { c: "#3b82f6", l: "Ready" }, { c: "#6b7280", l: "New" }].map((i) => <div key={i.l} className="flex items-center gap-0.5"><div className="w-1 h-1 rounded-full" style={{ backgroundColor: i.c }} /><span className="text-[7px] text-dark-600">{i.l}</span></div>)}</div>
               </div>
               {selectedMuscle && <MuscleInspector muscleId={selectedMuscle} recovery={recovery[selectedMuscle] || null} onTrain={handleTrain} />}
             </div>
@@ -159,7 +167,7 @@ export default function DashboardPage() {
 
           {mobileTab === "workouts" && (
             <div className="space-y-2 animate-fade-in">
-              {showLogger ? <div className="glass-card rounded-lg p-3"><WorkoutLogger preselectedMuscle={preselectedMuscle} onSaved={handleSaved} onCancel={() => { setShowLogger(false); setPreselectedMuscle(null); }} /></div>
+              {showLogger ? <div className="glass-card rounded-lg p-2.5"><WorkoutLogger preselectedMuscle={preselectedMuscle} onSaved={handleSaved} onCancel={() => { setShowLogger(false); setPreselectedMuscle(null); }} /></div>
               : <>
                 <div className="flex items-center justify-between"><h3 className="text-dark-400 font-semibold text-[11px] uppercase tracking-wider">Workouts</h3><button onClick={() => setShowLogger(true)} className="h-6 px-2.5 bg-brand-600 text-white rounded text-[10px] font-semibold flex items-center gap-1"><svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>New</button></div>
                 {loading ? <div className="glass-card rounded-lg p-6 text-center"><div className="w-5 h-5 border-2 border-brand-500/30 border-t-brand-500 rounded-full mx-auto animate-spin" /></div>
@@ -178,9 +186,9 @@ export default function DashboardPage() {
         </div>
       </main>
 
-      {/* ─── MOBILE BOTTOM NAV — compact ─── */}
+      {/* ─── MOBILE BOTTOM NAV ─── */}
       <nav className="mobile-nav lg:hidden">
-        <div className="flex items-center justify-around px-1 py-0.5 pb-safe">
+        <div className="grid grid-cols-5 px-2 py-1 pb-safe">
           {([
             { id: "map" as MobileTab, label: "Map", d: "M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" },
             { id: "workouts" as MobileTab, label: "Train", d: "M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" },
@@ -188,9 +196,9 @@ export default function DashboardPage() {
             { id: "progress" as MobileTab, label: "Stats", d: "M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" },
             { id: "more" as MobileTab, label: "More", d: "M12 5v.01M12 12v.01M12 19v.01" },
           ]).map((t) => (
-            <button key={t.id} onClick={() => setMobileTab(t.id)} className={`flex flex-col items-center py-1 px-2 rounded transition-all ${mobileTab === t.id ? "text-brand-400" : "text-dark-600"}`}>
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={mobileTab === t.id ? 2 : 1.5}><path strokeLinecap="round" strokeLinejoin="round" d={t.d} /></svg>
-              <span className="text-[8px] font-medium mt-0.5">{t.label}</span>
+            <button key={t.id} onClick={() => setMobileTab(t.id)} className={`flex flex-col items-center justify-center py-1 rounded transition-all ${mobileTab === t.id ? "text-brand-400" : "text-dark-600"}`}>
+              <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={mobileTab === t.id ? 2.2 : 1.5}><path strokeLinecap="round" strokeLinejoin="round" d={t.d} /></svg>
+              <span className="text-[7px] font-medium mt-px leading-none">{t.label}</span>
             </button>
           ))}
         </div>
