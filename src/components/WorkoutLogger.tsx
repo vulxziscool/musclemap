@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { EXERCISE_LIBRARY, EXERCISE_MAP } from "@/lib/exercises";
 import { MUSCLES, MUSCLE_MAP } from "@/lib/muscles";
+import NumberStepper from "@/components/NumberStepper";
 
 interface ExerciseRow {
   id: string;
@@ -340,52 +341,43 @@ function ExerciseInput({ exercise, index, searchTerm, onSearchChange, onUpdate, 
         </div>
       )}
 
-      {/* Sets / Reps / Weight / Rest */}
-      <div className="grid grid-cols-4 gap-2 mb-3">
-        {[
-          { label: "Sets", value: exercise.sets, onChange: (v: string) => onUpdate({ sets: parseInt(v) || 1 }), type: "number" as const },
-          { label: "Reps", value: exercise.reps, onChange: (v: string) => { const r = parseInt(v) || 1; onUpdate({ reps: r, setReps: Array(exercise.sets).fill(r) }); }, type: "number" as const },
-          { label: "Weight", value: exercise.weight, onChange: (v: string) => onUpdate({ weight: v }), type: "text" as const, placeholder: "lbs" },
-          { label: "Rest(s)", value: exercise.restTime, onChange: (v: string) => onUpdate({ restTime: parseInt(v) || 0 }), type: "number" as const },
-        ].map((f) => (
-          <div key={f.label}>
-            <label className="text-dark-600 text-[10px] uppercase tracking-wider font-medium mb-1 block">{f.label}</label>
-            <input
-              type={f.type}
-              value={f.value}
-              onChange={(e) => f.onChange(e.target.value)}
-              placeholder={f.placeholder || ""}
-              className="input-compact"
-            />
-          </div>
-        ))}
+      {/* Sets / Reps / Weight / Rest — steppers */}
+      <div className="grid grid-cols-4 gap-1.5 mb-2.5">
+        <NumberStepper label="Sets" value={exercise.sets} onChange={(v) => onUpdate({ sets: v })} min={1} max={10} />
+        <NumberStepper label="Reps" value={exercise.reps} onChange={(v) => { onUpdate({ reps: v, setReps: Array(exercise.sets).fill(v) }); }} min={1} max={100} />
+        <div>
+          <label className="text-dark-600 text-[9px] lg:text-[10px] uppercase tracking-wider font-medium mb-0.5 block">Weight</label>
+          <input type="text" inputMode="decimal" value={exercise.weight} onChange={(e) => onUpdate({ weight: e.target.value })} onFocus={(e) => e.target.select()} placeholder="lbs" className="input-compact !h-7 lg:!h-8" />
+        </div>
+        <NumberStepper label="Rest(s)" value={exercise.restTime} onChange={(v) => onUpdate({ restTime: v })} min={0} max={600} step={15} />
       </div>
 
       {/* Quick templates */}
-      <div className="flex gap-1.5 mb-3">
+      <div className="flex gap-1 mb-2.5">
         {QUICK_TEMPLATES.map((t) => (
-          <button
-            key={t.label}
-            onClick={() => onUpdate({ sets: t.sets, reps: t.reps, setReps: Array(t.sets).fill(t.reps) })}
-            className="text-[10px] font-medium px-2.5 py-1 rounded-md bg-white/[.03] text-dark-400 hover:bg-white/[.06] hover:text-dark-200 transition-colors border border-white/[.04]"
-          >
-            {t.label}
-          </button>
+          <button key={t.label} onClick={() => onUpdate({ sets: t.sets, reps: t.reps, setReps: Array(t.sets).fill(t.reps) })} className="text-[9px] font-medium px-2 py-0.5 rounded bg-white/[.03] text-dark-500 hover:bg-white/[.06] hover:text-dark-300 transition-colors border border-white/[.04]">{t.label}</button>
         ))}
       </div>
 
-      {/* Set-by-set reps */}
+      {/* Set-by-set reps — steppers */}
       <div className="mb-3">
-        <label className="text-dark-600 text-[10px] uppercase tracking-wider font-medium mb-1.5 block">Set-by-Set Reps</label>
-        <div className="flex gap-1.5 flex-wrap">
+        <label className="text-dark-600 text-[9px] lg:text-[10px] uppercase tracking-wider font-medium mb-1 block">Per-Set Reps</label>
+        <div className="flex gap-1 flex-wrap">
           {exercise.setReps.map((rep, i) => (
-            <div key={i} className="flex flex-col items-center gap-0.5">
-              <span className="text-[9px] text-dark-600 font-medium">S{i + 1}</span>
-              <input
-                type="number" min="0" value={rep}
-                onChange={(e) => { const arr = [...exercise.setReps]; arr[i] = parseInt(e.target.value) || 0; onUpdate({ setReps: arr }); }}
-                className="w-10 input-compact !py-1 !text-[11px]"
-              />
+            <div key={i} className="flex flex-col items-center gap-px">
+              <span className="text-[8px] text-dark-600 font-medium">S{i + 1}</span>
+              <div className="flex items-center glass-inset rounded overflow-hidden h-6">
+                <button onClick={() => { const a = [...exercise.setReps]; a[i] = Math.max(0, rep - 1); onUpdate({ setReps: a }); }} className="w-5 h-full flex items-center justify-center text-dark-500 hover:text-white hover:bg-white/[.06] active:bg-white/10" type="button">
+                  <svg className="w-2 h-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" d="M5 12h14" /></svg>
+                </button>
+                <input type="text" inputMode="numeric" value={rep}
+                  onChange={(e) => { const raw = e.target.value.replace(/[^0-9]/g, ""); const a = [...exercise.setReps]; a[i] = raw === "" ? 0 : parseInt(raw); onUpdate({ setReps: a }); }}
+                  onFocus={(e) => e.target.select()}
+                  className="w-7 bg-transparent text-center text-white text-[10px] font-semibold tabular-nums outline-none border-none" />
+                <button onClick={() => { const a = [...exercise.setReps]; a[i] = rep + 1; onUpdate({ setReps: a }); }} className="w-5 h-full flex items-center justify-center text-dark-500 hover:text-white hover:bg-white/[.06] active:bg-white/10" type="button">
+                  <svg className="w-2 h-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" d="M12 5v14M5 12h14" /></svg>
+                </button>
+              </div>
             </div>
           ))}
         </div>

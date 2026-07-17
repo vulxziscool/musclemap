@@ -18,44 +18,47 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { name, heightFeet, heightInches, heightCm, birthYear, gender, unitSystem } = body;
 
-    // Calculate heightCm from feet/inches if imperial
-    let cm = heightCm ?? null;
-    if ((unitSystem === "imperial" || !unitSystem) && heightFeet != null) {
-      cm = ((heightFeet || 0) * 12 + (heightInches || 0)) * 2.54;
+    // Parse everything explicitly — don't trust nullish coalescing
+    const name: string | null = body.name || null;
+    const heightFeet: number | null = typeof body.heightFeet === "number" ? body.heightFeet : null;
+    const heightInches: number | null = typeof body.heightInches === "number" ? body.heightInches : null;
+    const birthYear: number | null = typeof body.birthYear === "number" ? body.birthYear : null;
+    const gender: string | null = body.gender || null;
+    const unitSystem: string = body.unitSystem || "imperial";
+
+    // Always compute cm from feet/inches
+    let heightCm: number | null = null;
+    if (heightFeet !== null) {
+      heightCm = (heightFeet * 12 + (heightInches || 0)) * 2.54;
+    } else if (typeof body.heightCm === "number") {
+      heightCm = body.heightCm;
     }
+
+    const data = {
+      name,
+      heightFeet,
+      heightInches,
+      heightCm,
+      birthYear,
+      gender,
+      unitSystem,
+      updatedAt: new Date(),
+    };
 
     const existing = await db.select().from(userProfile).limit(1);
 
     if (existing.length > 0) {
       const [updated] = await db
         .update(userProfile)
-        .set({
-          name: name ?? existing[0].name,
-          heightFeet: heightFeet ?? existing[0].heightFeet,
-          heightInches: heightInches ?? existing[0].heightInches,
-          heightCm: cm ?? existing[0].heightCm,
-          birthYear: birthYear ?? existing[0].birthYear,
-          gender: gender ?? existing[0].gender,
-          unitSystem: unitSystem ?? existing[0].unitSystem,
-          updatedAt: new Date(),
-        })
+        .set(data)
         .where(eq(userProfile.id, existing[0].id))
         .returning();
       return NextResponse.json(updated);
     } else {
       const [created] = await db
         .insert(userProfile)
-        .values({
-          name: name ?? null,
-          heightFeet: heightFeet ?? null,
-          heightInches: heightInches ?? null,
-          heightCm: cm ?? null,
-          birthYear: birthYear ?? null,
-          gender: gender ?? null,
-          unitSystem: unitSystem ?? "imperial",
-        })
+        .values(data)
         .returning();
       return NextResponse.json(created);
     }

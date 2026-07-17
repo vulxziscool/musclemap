@@ -29,13 +29,14 @@
   --color-dark-950: #020617;
 }
 
-/* ─── Base ─── */
 body {
   background: #080b14;
   min-height: 100vh;
+  min-height: 100dvh;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  font-size: 14px;
 }
 body::before {
   content: "";
@@ -46,11 +47,16 @@ body::before {
   z-index: 0;
 }
 
-/* ─── Glass system ─── */
+/* ─── Mobile-first sizing ─── */
+@media (max-width: 1023px) {
+  html { font-size: 13px; }
+}
+
+/* Glass */
 .glass {
-  background: rgba(12, 16, 28, 0.82);
-  backdrop-filter: blur(24px) saturate(1.2);
-  -webkit-backdrop-filter: blur(24px) saturate(1.2);
+  background: rgba(12, 16, 28, 0.85);
+  backdrop-filter: blur(20px) saturate(1.2);
+  -webkit-backdrop-filter: blur(20px) saturate(1.2);
   border: 1px solid rgba(148, 163, 184, 0.06);
 }
 .glass-card {
@@ -60,177 +66,117 @@ body::before {
   border: 1px solid rgba(148, 163, 184, 0.06);
   box-shadow: 0 1px 2px rgba(0,0,0,.3), 0 0 0 1px rgba(255,255,255,.015) inset;
 }
-.glass-card-hover {
-  transition: border-color 0.25s ease, box-shadow 0.25s ease;
-}
-.glass-card-hover:hover {
-  border-color: rgba(148,163,184,.12);
-  box-shadow: 0 2px 12px rgba(0,0,0,.4), 0 0 0 1px rgba(255,255,255,.02) inset;
-}
-.glass-inset {
-  background: rgba(0, 0, 0, 0.18);
-  border: 1px solid rgba(255,255,255,.025);
-}
-.glass-light {
-  background: rgba(30, 41, 59, 0.35);
-  border: 1px solid rgba(148, 163, 184, 0.06);
-}
+.glass-card-hover { transition: border-color 0.2s ease, box-shadow 0.2s ease; }
+.glass-card-hover:hover { border-color: rgba(148,163,184,.12); box-shadow: 0 2px 12px rgba(0,0,0,.4); }
+.glass-inset { background: rgba(0, 0, 0, 0.18); border: 1px solid rgba(255,255,255,.025); }
+.glass-light { background: rgba(30, 41, 59, 0.35); border: 1px solid rgba(148, 163, 184, 0.06); }
 
-/* ─── Muscle paths ─── */
-.muscle-path {
-  transition: all 0.25s ease;
-  cursor: pointer;
-}
-.muscle-path:hover {
-  filter: brightness(1.35) drop-shadow(0 0 8px currentColor);
-}
-.muscle-glow {
-  filter: drop-shadow(0 0 6px currentColor) brightness(1.15);
-}
+/* Muscle */
+.muscle-path { transition: all 0.25s ease; cursor: pointer; }
+.muscle-path:hover { filter: brightness(1.35) drop-shadow(0 0 8px currentColor); }
+.muscle-glow { filter: drop-shadow(0 0 6px currentColor) brightness(1.15); }
 
-/* ─── Animations ─── */
-@keyframes fade-in {
-  from { opacity: 0; transform: translateY(6px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-.animate-fade-in { animation: fade-in 0.3s ease; }
-
-@keyframes slide-up {
-  from { opacity: 0; transform: translateY(12px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-.animate-slide-up { animation: slide-up 0.35s ease; }
-
-@keyframes bar-fill {
-  from { transform: scaleX(0); }
-  to   { transform: scaleX(1); }
-}
-.animate-bar-fill {
-  transform-origin: left;
-  animation: bar-fill 0.5s ease forwards;
-}
-
-@keyframes count-up {
-  from { opacity: 0; transform: translateY(4px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-.stat-value { animation: count-up 0.4s ease both; }
-
+/* Animations */
+@keyframes fade-in { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:translateY(0); } }
+.animate-fade-in { animation: fade-in 0.25s ease; }
+@keyframes slide-up { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+.animate-slide-up { animation: slide-up 0.3s ease; }
+@keyframes bar-fill { from { transform:scaleX(0); } to { transform:scaleX(1); } }
+.animate-bar-fill { transform-origin:left; animation:bar-fill 0.5s ease forwards; }
+.stat-value { animation: fade-in 0.3s ease both; }
 .body-map-container { perspective: 1200px; }
-.body-flip-enter { animation: flip-in 0.35s ease; }
-@keyframes flip-in {
-  from { transform: rotateY(80deg); opacity: 0; }
-  to   { transform: rotateY(0deg); opacity: 1; }
-}
+.body-flip-enter { animation: flip-in 0.3s ease; }
+@keyframes flip-in { from { transform:rotateY(80deg); opacity:0; } to { transform:rotateY(0); opacity:1; } }
 
-/* ─── Scrollbar ─── */
-.scrollbar-thin::-webkit-scrollbar { width: 3px; }
+/* Scrollbar */
+.scrollbar-thin::-webkit-scrollbar { width: 2px; }
 .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
 .scrollbar-thin::-webkit-scrollbar-thumb { background: rgba(148,163,184,.1); border-radius: 99px; }
-.scrollbar-thin::-webkit-scrollbar-thumb:hover { background: rgba(148,163,184,.2); }
 
-/* ─── Pill group ─── */
+/* Pills — compact on mobile */
 .pill-group {
   display: inline-flex;
   background: rgba(0,0,0,.2);
-  border-radius: 10px;
+  border-radius: 7px;
   padding: 2px;
   border: 1px solid rgba(148,163,184,.05);
   gap: 1px;
 }
 .pill-btn {
-  padding: 5px 12px;
-  border-radius: 8px;
-  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 5px;
+  font-size: 10px;
   font-weight: 500;
   color: #64748b;
   transition: all 0.2s ease;
   white-space: nowrap;
-  letter-spacing: 0.01em;
 }
 .pill-btn:hover { color: #cbd5e1; }
-.pill-btn.active {
-  background: rgba(99,102,241,.8);
-  color: #fff;
-  box-shadow: 0 1px 4px rgba(99,102,241,.3);
+.pill-btn.active { background: rgba(99,102,241,.8); color: #fff; box-shadow: 0 1px 4px rgba(99,102,241,.3); }
+
+@media (min-width: 1024px) {
+  .pill-btn { padding: 5px 12px; font-size: 11px; border-radius: 8px; }
+  .pill-group { border-radius: 10px; }
 }
 
-/* ─── Inputs ─── */
+/* Inputs — compact on mobile */
 .input-field {
   width: 100%;
   background: rgba(0,0,0,.25);
   border: 1px solid rgba(148,163,184,.08);
-  border-radius: 8px;
-  padding: 8px 12px;
+  border-radius: 6px;
+  padding: 6px 10px;
   color: #f1f5f9;
-  font-size: 13px;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  font-size: 12px;
+  transition: border-color 0.2s ease;
   outline: none;
 }
 .input-field::placeholder { color: #334155; }
-.input-field:focus {
-  border-color: rgba(99,102,241,.4);
-  box-shadow: 0 0 0 2px rgba(99,102,241,.06);
+.input-field:focus { border-color: rgba(99,102,241,.4); box-shadow: 0 0 0 2px rgba(99,102,241,.06); }
+
+@media (min-width: 1024px) {
+  .input-field { padding: 8px 12px; font-size: 13px; border-radius: 8px; }
 }
+
 .input-compact {
   width: 100%;
   background: rgba(0,0,0,.25);
   border: 1px solid rgba(148,163,184,.06);
-  border-radius: 7px;
-  padding: 5px 6px;
+  border-radius: 5px;
+  padding: 4px 5px;
   color: #f1f5f9;
-  font-size: 12px;
+  font-size: 11px;
   text-align: center;
   transition: border-color 0.2s ease;
   outline: none;
 }
-.input-compact:focus {
-  border-color: rgba(99,102,241,.4);
-}
+.input-compact:focus { border-color: rgba(99,102,241,.4); }
 
-/* ─── Bars ─── */
-.bar-track {
-  height: 5px;
-  background: rgba(255,255,255,.035);
-  border-radius: 99px;
-  overflow: hidden;
-}
-.bar-fill {
-  height: 100%;
-  border-radius: 99px;
-  transition: width 0.6s ease;
-}
+/* Bars */
+.bar-track { height: 4px; background: rgba(255,255,255,.035); border-radius: 99px; overflow: hidden; }
+.bar-fill { height: 100%; border-radius: 99px; transition: width 0.6s ease; }
 
-/* ─── Select ─── */
+/* Select */
 select {
   appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
-  background-position: right 10px center;
-  padding-right: 28px;
+  background-position: right 8px center;
+  padding-right: 24px;
 }
 
-/* ─── Mobile bottom nav ─── */
+/* Mobile bottom nav */
 .mobile-nav {
   position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
+  bottom: 0; left: 0; right: 0;
   z-index: 50;
-  background: rgba(8, 11, 20, 0.92);
+  background: rgba(8, 11, 20, 0.95);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border-top: 1px solid rgba(148,163,184,.06);
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
-/* ─── Safe areas for mobile ─── */
 @supports (padding-bottom: env(safe-area-inset-bottom)) {
   .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
-}
-
-/* ─── Touch target ─── */
-@media (pointer: coarse) {
-  .pill-btn { padding: 7px 14px; font-size: 12px; }
-  .muscle-path { stroke-width: 0; }
 }
