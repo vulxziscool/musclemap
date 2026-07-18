@@ -14,6 +14,14 @@ import CalorieCounter from "@/components/CalorieCounter";
 import AIAssistant from "@/components/AIAssistant";
 import Achievements from "@/components/Achievements";
 import ExerciseHistory from "@/components/ExerciseHistory";
+import InjuryPrevention from "@/components/InjuryPrevention";
+import RestTimer from "@/components/RestTimer";
+import OneRMCalculator from "@/components/OneRMCalculator";
+import StreakCalendar from "@/components/StreakCalendar";
+import ProgressPhotos from "@/components/ProgressPhotos";
+import SmartTools from "@/components/SmartTools";
+import WorkoutExtras from "@/components/WorkoutExtras";
+import ProFeatures from "@/components/ProFeatures";
 import DeviceSync from "@/components/DeviceSync";
 import { RecoveryState, MUSCLE_MAP, REGIONS, type RegionId } from "@/lib/muscles";
 
@@ -153,12 +161,20 @@ export default function DashboardPage() {
             {selectedMuscle && <MuscleInspector muscleId={selectedMuscle} recovery={recovery[selectedMuscle] || null} onTrain={handleTrain} />}
             {showRadar && <RecoveryRadar recovery={recovery} />}
             {!selectedMuscle && !showRadar && <div className="glass-card rounded-xl p-5 text-center"><p className="text-dark-500 text-xs">Select a muscle on the body map.</p></div>}
+            <RestTimer />
+            <SmartTools workouts={workouts} recovery={recovery} />
             <Achievements workouts={workouts} totalWeight={totalWeightLifted} />
+            <StreakCalendar workouts={workouts} />
             <ExerciseHistory workouts={workouts} bodyWeight={userBodyWeight} gender={userGender} />
             <AIAssistant />
             <ProgressCharts />
+            <ProgressPhotos />
+            <OneRMCalculator />
             <CardioTracker />
+            <WorkoutExtras workouts={workouts} />
+            <ProFeatures workouts={workouts} />
             <CalorieCounter />
+            <InjuryPrevention />
             <DeviceSync />
           </div>
         </div>
@@ -203,9 +219,9 @@ export default function DashboardPage() {
 
           {mobileTab === "nutrition" && <div className="space-y-2 animate-fade-in"><CalorieCounter /></div>}
 
-          {mobileTab === "progress" && <div className="space-y-2 animate-fade-in"><PersonalProfile /><Achievements workouts={workouts} totalWeight={totalWeightLifted} /><ExerciseHistory workouts={workouts} bodyWeight={userBodyWeight} gender={userGender} /><ProgressCharts /></div>}
+          {mobileTab === "progress" && <div className="space-y-2 animate-fade-in"><PersonalProfile /><StreakCalendar workouts={workouts} /><Achievements workouts={workouts} totalWeight={totalWeightLifted} /><ExerciseHistory workouts={workouts} bodyWeight={userBodyWeight} gender={userGender} /><ProgressCharts /><ProgressPhotos /></div>}
 
-          {mobileTab === "more" && <div className="space-y-2 animate-fade-in"><AIAssistant /><RecoveryRadar recovery={recovery} /><DeviceSync /></div>}
+          {mobileTab === "more" && <div className="space-y-2 animate-fade-in"><RestTimer /><SmartTools workouts={workouts} recovery={recovery} /><WorkoutExtras workouts={workouts} /><ProFeatures workouts={workouts} /><OneRMCalculator /><AIAssistant /><InjuryPrevention /><RecoveryRadar recovery={recovery} /><DeviceSync /></div>}
         </div>
       </main>
 

@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useCallback, useId } from "react";
 import NumberStepper from "@/components/NumberStepper";
+import { todayET } from "@/lib/timezone";
+import { triggerConfetti } from "@/components/Confetti";
 
 interface BodyMetric { id: number; date: string; weight: number | null; bodyFat: number | null; }
 interface StrengthRecord { id: number; date: string; exerciseName: string; weight: number; reps: number; estimatedMax: number | null; }
@@ -157,8 +159,9 @@ function StrengthLogForm({ onSaved, onCancel }: { onSaved: () => void; onCancel:
       await fetch("/api/strength", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ date: new Date().toISOString().split("T")[0], exerciseName: name, weight, reps }),
+        body: JSON.stringify({ date: todayET(), exerciseName: name, weight, reps }),
       });
+      triggerConfetti();
       onSaved();
     } catch { /* silent */ }
     finally { setSaving(false); }

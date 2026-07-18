@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { todayET } from "@/lib/timezone";
 
 interface Profile {
   id: number;
@@ -39,6 +40,14 @@ export default function PersonalProfile() {
   const [latestBf, setLatestBf] = useState<number | null>(null);
   const [editing, setEditing] = useState(false);
   const [logWeight, setLogWeight] = useState(false);
+  const [showMeasurements, setShowMeasurements] = useState(false);
+
+  // Body tape measurements
+  const [chest, setChest] = useState("");
+  const [waist, setWaist] = useState("");
+  const [arms, setArms] = useState("");
+  const [thighs, setThighs] = useState("");
+  const [measureHistory, setMeasureHistory] = useState<{ date: string; chest: string; waist: string; arms: string; thighs: string }[]>([]);
 
   const [formName, setFormName] = useState("");
   const [formFeet, setFormFeet] = useState("");
@@ -81,7 +90,21 @@ export default function PersonalProfile() {
     } catch { /* silent */ }
   }, []);
 
-  useEffect(() => { fetchProfile(); fetchLatestMetric(); }, [fetchProfile, fetchLatestMetric]);
+  useEffect(() => {
+    fetchProfile();
+    fetchLatestMetric();
+    const savedm = localStorage.getItem("mm_measurements");
+    if (savedm) setMeasureHistory(JSON.parse(savedm));
+  }, [fetchProfile, fetchLatestMetric]);
+
+  const saveMeasurements = () => {
+    if (!chest && !waist && !arms && !thighs) return;
+    const entry = { date: todayET(), chest, waist, arms, thighs };
+    const updated = [entry, ...measureHistory].slice(0, 20);
+    setMeasureHistory(updated);
+    localStorage.setItem("mm_measurements", JSON.stringify(updated));
+    setShowMeasurements(false);
+  };
 
   const saveProfile = async () => {
     setSaving(true);
@@ -124,7 +147,7 @@ export default function PersonalProfile() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          date: new Date().toISOString().split("T")[0],
+          date: todayET(),
           weight: parseFloat(newWeight),
           bodyFat: newBf.trim() ? parseFloat(newBf) : null,
         }),
@@ -239,6 +262,35 @@ export default function PersonalProfile() {
             <div className="text-dark-600 text-[8px] uppercase tracking-wider font-medium mb-0.5">{latestBf ? "Body Fat" : "Age"}</div>
             <div className="text-white font-bold text-sm tabular-nums leading-none">{latestBf ? `${latestBf.toFixed(1)}` : age ? String(age) : "—"}<span className="text-dark-600 text-[8px] font-normal ml-0.5">{latestBf ? "%" : age ? "yrs" : ""}</span></div>
           </div>
+        </div>
+
+        {/* Tape Measurements Toggle */}
+        <div className="mb-2">
+          <button onClick={() => setShowMeasurements(!showMeasurements)} className="w-full h-6 glass-inset text-dark-400 hover:text-white rounded text-[9px] font-medium flex items-center justify-between px-2">
+            <span>Body Tape Measurements ({measureHistory.length})</span>
+            <span>{showMeasurements ? "▲" : "▼"}</span>
+          </button>
+          {showMeasurements && (
+            <div className="glass-inset rounded p-2 mt-1 space-y-2 animate-fade-in">
+              <div className="grid grid-cols-2 gap-1.5">
+                <div><label className="text-dark-600 text-[8px] uppercase block">Chest (in)</label><input type="text" value={chest} onChange={(e) => setChest(e.target.value)} placeholder='e.g. 40"' className="input-compact" /></div>
+                <div><label className="text-dark-600 text-[8px] uppercase block">Waist (in)</label><input type="text" value={waist} onChange={(e) => setWaist(e.target.value)} placeholder='e.g. 32"' className="input-compact" /></div>
+                <div><label className="text-dark-600 text-[8px] uppercase block">Arms (in)</label><input type="text" value={arms} onChange={(e) => setArms(e.target.value)} placeholder='e.g. 15"' className="input-compact" /></div>
+                <div><label className="text-dark-600 text-[8px] uppercase block">Thighs (in)</label><input type="text" value={thighs} onChange={(e) => setThighs(e.target.value)} placeholder='e.g. 23"' className="input-compact" /></div>
+              </div>
+              <button onClick={saveMeasurements} className="w-full h-6 bg-brand-600 hover:bg-brand-500 text-white text-[9px] font-semibold rounded">Save Tape Log</button>
+              {measureHistory.length > 0 && (
+                <div className="space-y-1 max-h-24 overflow-y-auto scrollbar-thin pt-1">
+                  {measureHistory.map((m, i) => (
+                    <div key={i} className="bg-black/20 rounded p-1 text-[8px] text-dark-400 flex justify-between">
+                      <span className="font-semibold text-white">{m.date.slice(5)}</span>
+                      <span>{m.chest ? `C:${m.chest}` : ""} {m.waist ? `W:${m.waist}` : ""} {m.arms ? `A:${m.arms}` : ""} {m.thighs ? `T:${m.thighs}` : ""}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Log weight */}

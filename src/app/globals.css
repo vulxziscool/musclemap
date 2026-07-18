@@ -188,3 +188,25 @@ select {
 @supports (padding-bottom: env(safe-area-inset-bottom)) {
   .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
 }
+
+/* ─── Final mobile polish ─── */
+@media (max-width: 1023px) {
+  /* Prevent text selection on buttons */
+  button, [role="button"] { -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
+  /* Prevent zoom on input focus (iOS) */
+  input, select, textarea { font-size: 16px !important; }
+  input.input-compact, .input-compact { font-size: 14px !important; }
+  /* Smoother scrolling */
+  * { -webkit-overflow-scrolling: touch; }
+  /* Fix fixed position on iOS */
+  .mobile-nav { transform: translateZ(0); }
+  /* Prevent body bounce on iOS */
+  html { overscroll-behavior: none; }
+  body { overscroll-behavior-y: none; }
+}
+
+/* Touch-friendly minimum sizes */
+@media (pointer: coarse) {
+  button, a, [role="button"] { min-height: 28px; }
+  .pill-btn { min-height: 26px; padding: 4px 10px; }
+}

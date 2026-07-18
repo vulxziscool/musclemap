@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
+import Confetti from "@/components/Confetti";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -32,6 +33,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <link rel="apple-touch-icon" href="/icon-192.png" />
       </head>
       <body className="font-sans text-dark-200 antialiased selection:bg-brand-500/20 selection:text-white">
+        <Confetti />
         <div className="relative z-10">{children}</div>
       </body>
     </html>

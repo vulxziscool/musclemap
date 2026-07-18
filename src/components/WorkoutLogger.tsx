@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { EXERCISE_LIBRARY, EXERCISE_MAP } from "@/lib/exercises";
 import { MUSCLES, MUSCLE_MAP } from "@/lib/muscles";
 import NumberStepper from "@/components/NumberStepper";
+import { triggerConfetti } from "@/components/Confetti";
 
 interface ExerciseRow {
   id: string;
@@ -59,16 +60,30 @@ function createEmptyExercise(preselectedMuscle?: string): ExerciseRow {
 }
 
 export default function WorkoutLogger({ preselectedMuscle, onSaved, onCancel }: Props) {
-  const today = new Date();
   const [name, setName] = useState("");
-  const [date, setDate] = useState(today.toISOString().split("T")[0]);
-  const [time, setTime] = useState(today.toTimeString().slice(0, 5));
-  const [duration, setDuration] = useState("45");
+  const [date, setDate] = useState(() => { const d = new Date().toLocaleString("en-US", { timeZone: "America/New_York" }); const p = new Date(d); return `${p.getFullYear()}-${String(p.getMonth()+1).padStart(2,"0")}-${String(p.getDate()).padStart(2,"0")}`; });
+  const [time, setTime] = useState(() => { const d = new Date().toLocaleString("en-US", { timeZone: "America/New_York", hour12: false }); const p = new Date(d); return `${String(p.getHours()).padStart(2,"0")}:${String(p.getMinutes()).padStart(2,"0")}`; });
+  const [duration, setDuration] = useState("0");
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const [timerRunning, setTimerRunning] = useState(true);
   const [notes, setNotes] = useState("");
   const [exerciseRows, setExerciseRows] = useState<ExerciseRow[]>([createEmptyExercise(preselectedMuscle || undefined)]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [searchTerms, setSearchTerms] = useState<Record<string, string>>({});
+
+  // Active workout live stopwatch
+  useEffect(() => {
+    if (!timerRunning) return;
+    const interval = setInterval(() => {
+      setElapsedSeconds((s) => {
+        const next = s + 1;
+        setDuration(String(Math.max(1, Math.round(next / 60))));
+        return next;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [timerRunning]);
 
   useEffect(() => {
     if (preselectedMuscle) {
@@ -146,6 +161,7 @@ export default function WorkoutLogger({ preselectedMuscle, onSaved, onCancel }: 
         }),
       });
       if (!res.ok) { const data = await res.json(); throw new Error(data.error || "Failed to save"); }
+      triggerConfetti();
       onSaved();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Save failed");
@@ -179,6 +195,29 @@ export default function WorkoutLogger({ preselectedMuscle, onSaved, onCancel }: 
           {error}
         </div>
       )}
+
+      {/* Active Session Live Timer Bar */}
+      <div className="glass-inset rounded-lg p-2.5 mb-4 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="relative flex h-2.5 w-2.5">
+            {timerRunning && <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>}
+            <span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${timerRunning ? "bg-emerald-500" : "bg-amber-500"}`}></span>
+          </span>
+          <span className="text-dark-400 text-[10px] lg:text-[11px] font-medium">Active Session</span>
+        </div>
+        <div className="flex items-center gap-3">
+          <span className="text-white text-sm lg:text-base font-bold tabular-nums">
+            {Math.floor(elapsedSeconds / 60)}:{(elapsedSeconds % 60).toString().padStart(2, "0")}
+          </span>
+          <button
+            type="button"
+            onClick={() => setTimerRunning(!timerRunning)}
+            className="text-[10px] font-semibold px-2 py-1 rounded bg-white/[.04] text-dark-300 hover:text-white transition-colors"
+          >
+            {timerRunning ? "Pause" : "Resume"}
+          </button>
+        </div>
+      </div>
 
       {/* Workout details */}
       <div className="space-y-3 mb-5">
