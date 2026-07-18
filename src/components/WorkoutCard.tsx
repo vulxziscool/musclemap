@@ -1,8 +1,9 @@
 "use client";
 
 import { MUSCLE_MAP, getRecoveryColor, getRecoveryStatus, getRecoveryLabel, formatTimeSince } from "@/lib/muscles";
+import { isStaticExercise, formatSetValue } from "@/lib/exercises";
 
-interface SetDetail { set: number; reps: number; weight: string; failure: boolean; }
+interface SetDetail { set: number; reps: number; weight: string; failure: boolean; isTime?: boolean; }
 interface Exercise { id: number; name: string; primaryMuscle: string; secondaryMuscles: string[]; sets: number; reps: number; weight: string | null; restTime: number | null; equipment: string | null; setDetails?: SetDetail[]; }
 interface Workout { id: number; name: string; date: string; time: string | null; duration: number | null; notes: string | null; exercises: Exercise[]; }
 
@@ -125,29 +126,33 @@ export default function WorkoutCard({ workout, isSelected, onSelect, onDelete }:
                   {/* Per-set details table — always show */}
                   {(() => {
                     // Use saved setDetails, or generate from aggregate data
+                    const exIsStatic = isStaticExercise(ex.name);
                     const details: SetDetail[] = (ex.setDetails && ex.setDetails.length > 0)
                       ? ex.setDetails
-                      : Array.from({ length: ex.sets }, (_, i) => ({ set: i + 1, reps: ex.reps, weight: ex.weight || "BW", failure: false }));
+                      : Array.from({ length: ex.sets }, (_, i) => ({ set: i + 1, reps: ex.reps, weight: ex.weight || "BW", failure: false, isTime: exIsStatic }));
                     return (
                       <div className="space-y-px">
                         <div className="flex items-center gap-1 text-[6px] lg:text-[7px] text-dark-600 uppercase tracking-wider font-medium px-1 mb-0.5">
                           <span className="w-4 text-center">Set</span>
-                          <span className="flex-1">Reps</span>
+                          <span className="flex-1">{exIsStatic ? "Time" : "Reps"}</span>
                           <span className="w-14 text-center">Weight</span>
                           <span className="w-4 text-center">Fail</span>
                         </div>
-                        {details.map((sd, si) => (
-                          <div key={si} className={`flex items-center gap-1 rounded px-1.5 py-0.5 ${sd.failure ? "bg-red-500/5" : "bg-black/15"}`}>
-                            <span className="text-[8px] text-dark-500 font-bold w-4 text-center">{sd.set}</span>
-                            <span className="text-[9px] text-white font-semibold tabular-nums flex-1">{sd.reps} reps</span>
-                            <span className="text-[9px] text-dark-300 font-medium tabular-nums w-14 text-center">{sd.weight || "BW"}</span>
-                            {sd.failure ? (
-                              <span className="w-4 text-center text-[7px] font-bold text-red-400">F</span>
-                            ) : (
-                              <span className="w-4 text-center text-dark-700 text-[7px]">—</span>
-                            )}
-                          </div>
-                        ))}
+                        {details.map((sd, si) => {
+                          const setIsTime = sd.isTime ?? exIsStatic;
+                          return (
+                            <div key={si} className={`flex items-center gap-1 rounded px-1.5 py-0.5 ${sd.failure ? "bg-red-500/5" : "bg-black/15"}`}>
+                              <span className="text-[8px] text-dark-500 font-bold w-4 text-center">{sd.set}</span>
+                              <span className={`text-[9px] font-semibold tabular-nums flex-1 ${setIsTime ? "text-cyan-300" : "text-white"}`}>{formatSetValue(sd.reps, setIsTime)}</span>
+                              <span className="text-[9px] text-dark-300 font-medium tabular-nums w-14 text-center">{sd.weight || "BW"}</span>
+                              {sd.failure ? (
+                                <span className="w-4 text-center text-[7px] font-bold text-red-400">F</span>
+                              ) : (
+                                <span className="w-4 text-center text-dark-700 text-[7px]">—</span>
+                              )}
+                            </div>
+                          );
+                        })}
                       </div>
                     );
                   })()}

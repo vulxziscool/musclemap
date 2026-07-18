@@ -598,6 +598,52 @@ export const STRENGTH_STANDARDS: Record<string, { male: number[]; female: number
   "Leg Press":         { male: [1.00, 1.50, 2.50, 3.50, 4.50], female: [0.70, 1.10, 1.80, 2.50, 3.20] },
 };
 
+// ─── Static / Isometric Exercise Detection ───
+// These exercises use TIME (seconds) per set instead of reps
+const STATIC_EXERCISES = new Set([
+  "Plank", "Weighted Plank", "Hardstyle Plank", "Side Planks", "Side Plank Dips",
+  "L-Sits", "Tuck L-Sit", "Straddle L-Sit", "L-Sit to V-Sit",
+  "Hollow Holds", "Hollow Body Hold", "Hollow Body Rocks",
+  "Arch Body Hold", "Arch Body Rocks",
+  "Wall Sit", "Wall Sits",
+  "Passive Hang", "Active Hang", "Dead Hangs",
+  "Bridge Hold", "Bridge Push-Ups",
+  "German Hang",
+  "Support Hold (parallel bars)", "RTO Support Hold", "Ring Support Hold", "Ring Turned-Out Support", "Ring Support Hold",
+  "Handstand Hold", "Handstand Walk",
+  "Front Lever Hold", "Front Lever Progressions", "Straddle Front Lever", "Full Front Lever", "Tuck Front Lever",
+  "Back Lever", "Back Lever Hold",
+  "Human Flag", "Human Flag (straddle)", "Human Flag Progressions",
+  "Planche Lean", "Tuck Planche", "Straddle Planche", "Full Planche",
+  "Crow Pose", "Frog Stand",
+  "V-Sit Hold", "Manna",
+  "Iron Cross (rings)", "Inverted Cross (rings)", "Victorian (rings)",
+  "Superman Hold", "Reverse Plank",
+  "Copenhagen Adductor Plank", "Copenhagen Planks",
+  "Sissy Squat Hold",
+  "Cable Anti-Rotation Hold",
+  "Stir-the-Pot", "Body Saw",
+  "Wide Push-Up Hold",
+  "Plate Pinch Hold",
+  "Sleeper Stretch", "Cross-Body Shoulder Stretch", "Pigeon Stretch", "Couch Stretch",
+  "Hip 90/90 Stretch", "Calf Stretch (wall)", "Wrist Flexor Stretch", "Wrist Extensor Stretch",
+  "Pancake Stretch", "World's Greatest Stretch",
+  "Foam Roll Upper Back", "Foam Roll Quads", "Foam Roll IT Band",
+  "Lacrosse Ball Glutes", "Lacrosse Ball Pec Release",
+]);
+
+export function isStaticExercise(name: string): boolean {
+  if (STATIC_EXERCISES.has(name)) return true;
+  const lower = name.toLowerCase();
+  return lower.includes("hold") || lower.includes("plank") || lower.includes("hang") || lower.includes("lever hold") || lower.includes("stretch") || lower.includes("foam roll") || lower.includes("lacrosse ball") || lower.includes("sit hold") || lower.includes("wall sit");
+}
+
+export function formatSetValue(value: number, isStatic: boolean): string {
+  if (!isStatic) return `${value} reps`;
+  if (value >= 60) return `${Math.floor(value / 60)}m${value % 60 > 0 ? ` ${value % 60}s` : ""}`;
+  return `${value}s`;
+}
+
 export const RANK_LABELS = ["Beginner", "Novice", "Intermediate", "Advanced", "Elite"];
 export const RANK_COLORS = ["#64748b", "#3b82f6", "#22c55e", "#f59e0b", "#ef4444"];
 

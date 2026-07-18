@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { EXERCISE_LIBRARY, EXERCISE_MAP } from "@/lib/exercises";
+import { EXERCISE_LIBRARY, EXERCISE_MAP, isStaticExercise } from "@/lib/exercises";
 import { MUSCLES, MUSCLE_MAP } from "@/lib/muscles";
 import NumberStepper from "@/components/NumberStepper";
 import { triggerConfetti } from "@/components/Confetti";
@@ -146,11 +146,13 @@ export default function WorkoutLogger({ preselectedMuscle, onSaved, onCancel }: 
             const bestWeight = maxSetWeight > 0 ? maxSetWeight : mainWeight;
             const weightStr = bestWeight > 0 ? `${bestWeight} lbs` : (ex.weight || null);
             // Build per-set details array
+            const exIsStatic = isStaticExercise(ex.name);
             const setDetails = ex.setReps.map((reps, i) => ({
               set: i + 1,
               reps,
               weight: ex.setWeights[i] || ex.weight || "",
               failure: ex.setFailure[i] || false,
+              isTime: exIsStatic,
             }));
             return {
               name: ex.name, primaryMuscle: ex.primaryMuscle, secondaryMuscles: ex.secondaryMuscles,
@@ -324,6 +326,7 @@ function ExerciseInput({ exercise, index, searchTerm, onSearchChange, onUpdate, 
 
   const primaryMuscleName = MUSCLE_MAP[exercise.primaryMuscle]?.name || "";
   const totalTargetSets = exercise.sets;
+  const isStatic = isStaticExercise(exercise.name);
 
   return (
     <div className="glass-inset rounded-xl p-3.5 animate-fade-in">
@@ -402,16 +405,28 @@ function ExerciseInput({ exercise, index, searchTerm, onSearchChange, onUpdate, 
         </div>
       )}
 
-      {/* Sets / Reps / Weight / Rest — steppers */}
+      {/* Sets / Reps or Time / Weight / Rest — steppers */}
       <div className="grid grid-cols-4 gap-1.5 mb-2.5">
         <NumberStepper label="Sets" value={exercise.sets} onChange={(v) => onUpdate({ sets: v })} min={1} max={10} />
-        <NumberStepper label="Reps" value={exercise.reps} onChange={(v) => { onUpdate({ reps: v, setReps: Array(exercise.sets).fill(v) }); }} min={1} max={100} />
+        {isStatic ? (
+          <NumberStepper label="Time(s)" value={exercise.reps} onChange={(v) => { onUpdate({ reps: v, setReps: Array(exercise.sets).fill(v) }); }} min={1} max={600} step={5} suffix="s" />
+        ) : (
+          <NumberStepper label="Reps" value={exercise.reps} onChange={(v) => { onUpdate({ reps: v, setReps: Array(exercise.sets).fill(v) }); }} min={1} max={100} />
+        )}
         <div>
           <label className="text-dark-600 text-[9px] lg:text-[10px] uppercase tracking-wider font-medium mb-0.5 block">Weight</label>
-          <input type="text" inputMode="decimal" value={exercise.weight} onChange={(e) => onUpdate({ weight: e.target.value })} onFocus={(e) => e.target.select()} placeholder="lbs" className="input-compact !h-7 lg:!h-8" />
+          <input type="text" inputMode="decimal" value={exercise.weight} onChange={(e) => onUpdate({ weight: e.target.value })} onFocus={(e) => e.target.select()} placeholder={isStatic ? "BW" : "lbs"} className="input-compact !h-7 lg:!h-8" />
         </div>
         <NumberStepper label="Rest(s)" value={exercise.restTime} onChange={(v) => onUpdate({ restTime: v })} min={0} max={600} step={15} />
       </div>
+
+      {/* Static exercise indicator */}
+      {isStatic && (
+        <div className="flex items-center gap-1.5 mb-2 px-1">
+          <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
+          <span className="text-cyan-400 text-[8px] font-medium">Isometric / Static Hold — using time (seconds) per set</span>
+        </div>
+      )}
 
       {/* Quick templates */}
       <div className="flex gap-1 mb-2.5">
@@ -420,26 +435,26 @@ function ExerciseInput({ exercise, index, searchTerm, onSearchChange, onUpdate, 
         ))}
       </div>
 
-      {/* Per-set details — reps + weight for each set */}
+      {/* Per-set details — reps/time + weight for each set */}
       <div className="mb-3">
         <label className="text-dark-600 text-[9px] lg:text-[10px] uppercase tracking-wider font-medium mb-1 block">Per-Set Details</label>
         <div className="space-y-1">
           {exercise.setReps.map((rep, i) => (
             <div key={i} className="flex items-center gap-1 glass-inset rounded p-1">
               <span className="text-[7px] text-dark-500 font-bold w-3 text-center shrink-0">S{i + 1}</span>
-              {/* Reps stepper */}
+              {/* Reps or Time stepper */}
               <div className="flex items-center rounded overflow-hidden h-6 bg-black/20 flex-1">
-                <button onClick={() => { const a = [...exercise.setReps]; a[i] = Math.max(0, rep - 1); onUpdate({ setReps: a }); }} className="w-5 h-full flex items-center justify-center text-dark-500 hover:text-white active:bg-white/10" type="button">
+                <button onClick={() => { const a = [...exercise.setReps]; a[i] = Math.max(0, rep - (isStatic ? 5 : 1)); onUpdate({ setReps: a }); }} className="w-5 h-full flex items-center justify-center text-dark-500 hover:text-white active:bg-white/10" type="button">
                   <svg className="w-2 h-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" d="M5 12h14" /></svg>
                 </button>
                 <input type="text" inputMode="numeric" value={rep}
                   onChange={(e) => { const raw = e.target.value.replace(/[^0-9]/g, ""); const a = [...exercise.setReps]; a[i] = raw === "" ? 0 : parseInt(raw); onUpdate({ setReps: a }); }}
                   onFocus={(e) => e.target.select()}
-                  className="w-6 bg-transparent text-center text-white text-[10px] font-semibold tabular-nums outline-none border-none" />
-                <button onClick={() => { const a = [...exercise.setReps]; a[i] = rep + 1; onUpdate({ setReps: a }); }} className="w-5 h-full flex items-center justify-center text-dark-500 hover:text-white active:bg-white/10" type="button">
+                  className="w-7 bg-transparent text-center text-white text-[10px] font-semibold tabular-nums outline-none border-none" />
+                <button onClick={() => { const a = [...exercise.setReps]; a[i] = rep + (isStatic ? 5 : 1); onUpdate({ setReps: a }); }} className="w-5 h-full flex items-center justify-center text-dark-500 hover:text-white active:bg-white/10" type="button">
                   <svg className="w-2 h-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" d="M12 5v14M5 12h14" /></svg>
                 </button>
-                <span className="text-[6px] text-dark-600 pr-0.5">reps</span>
+                <span className={`text-[6px] pr-0.5 ${isStatic ? "text-cyan-500" : "text-dark-600"}`}>{isStatic ? "sec" : "reps"}</span>
               </div>
               {/* Weight input */}
               <div className="flex items-center rounded overflow-hidden h-6 bg-black/20 w-16 shrink-0">
