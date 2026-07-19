@@ -22,6 +22,7 @@ import ProgressPhotos from "@/components/ProgressPhotos";
 import SmartTools from "@/components/SmartTools";
 import WorkoutExtras from "@/components/WorkoutExtras";
 import ProFeatures from "@/components/ProFeatures";
+import PainTracker from "@/components/PainTracker";
 import DeviceSync from "@/components/DeviceSync";
 import { RecoveryState, MUSCLE_MAP, REGIONS, type RegionId } from "@/lib/muscles";
 
@@ -174,6 +175,7 @@ export default function DashboardPage() {
             <WorkoutExtras workouts={workouts} />
             <ProFeatures workouts={workouts} />
             <CalorieCounter />
+            <PainTracker />
             <InjuryPrevention />
             <DeviceSync />
           </div>
@@ -221,7 +223,7 @@ export default function DashboardPage() {
 
           {mobileTab === "progress" && <div className="space-y-2 animate-fade-in"><PersonalProfile /><StreakCalendar workouts={workouts} /><Achievements workouts={workouts} totalWeight={totalWeightLifted} /><ExerciseHistory workouts={workouts} bodyWeight={userBodyWeight} gender={userGender} /><ProgressCharts /><ProgressPhotos /></div>}
 
-          {mobileTab === "more" && <div className="space-y-2 animate-fade-in"><RestTimer /><SmartTools workouts={workouts} recovery={recovery} /><WorkoutExtras workouts={workouts} /><ProFeatures workouts={workouts} /><OneRMCalculator /><AIAssistant /><InjuryPrevention /><RecoveryRadar recovery={recovery} /><DeviceSync /></div>}
+          {mobileTab === "more" && <div className="space-y-2 animate-fade-in"><RestTimer /><PainTracker /><SmartTools workouts={workouts} recovery={recovery} /><WorkoutExtras workouts={workouts} /><ProFeatures workouts={workouts} /><OneRMCalculator /><AIAssistant /><InjuryPrevention /><RecoveryRadar recovery={recovery} /><DeviceSync /></div>}
         </div>
       </main>
 
