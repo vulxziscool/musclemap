@@ -16,6 +16,7 @@ interface ExerciseRow {
   setReps: number[];
   setWeights: string[];
   setFailure: boolean[];
+  setNotes: string[];
   weight: string;
   restTime: number;
   equipment: string;
@@ -52,6 +53,7 @@ function createEmptyExercise(preselectedMuscle?: string): ExerciseRow {
     setReps: Array(s).fill(defaultEx?.defaultReps || 10),
     setWeights: Array(s).fill(""),
     setFailure: Array(s).fill(false),
+    setNotes: Array(s).fill(""),
     weight: "",
     restTime: defaultEx?.defaultRest || 90,
     equipment: defaultEx?.equipment || "",
@@ -61,8 +63,8 @@ function createEmptyExercise(preselectedMuscle?: string): ExerciseRow {
 
 export default function WorkoutLogger({ preselectedMuscle, onSaved, onCancel }: Props) {
   const [name, setName] = useState("");
-  const [date, setDate] = useState(() => { const d = new Date().toLocaleString("en-US", { timeZone: "America/New_York" }); const p = new Date(d); return `${p.getFullYear()}-${String(p.getMonth()+1).padStart(2,"0")}-${String(p.getDate()).padStart(2,"0")}`; });
-  const [time, setTime] = useState(() => { const d = new Date().toLocaleString("en-US", { timeZone: "America/New_York", hour12: false }); const p = new Date(d); return `${String(p.getHours()).padStart(2,"0")}:${String(p.getMinutes()).padStart(2,"0")}`; });
+  const [date, setDate] = useState(() => { const n = new Date(); return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,"0")}-${String(n.getDate()).padStart(2,"0")}`; });
+  const [time, setTime] = useState(() => { const n = new Date(); return `${String(n.getHours()).padStart(2,"0")}:${String(n.getMinutes()).padStart(2,"0")}`; });
   const [duration, setDuration] = useState("0");
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [timerRunning, setTimerRunning] = useState(true);
@@ -102,6 +104,7 @@ export default function WorkoutLogger({ preselectedMuscle, onSaved, onCancel }: 
           updated.setReps = Array(newSets).fill(0).map((_, i) => ex.setReps[i] ?? ex.reps);
           updated.setWeights = Array(newSets).fill("").map((_, i) => ex.setWeights[i] ?? ex.weight);
           updated.setFailure = Array(newSets).fill(false).map((_, i) => ex.setFailure[i] ?? false);
+          updated.setNotes = Array(newSets).fill("").map((_, i) => ex.setNotes[i] ?? "");
         }
         return updated;
       })
@@ -114,7 +117,7 @@ export default function WorkoutLogger({ preselectedMuscle, onSaved, onCancel }: 
       updateExercise(rowId, {
         name: def.name, primaryMuscle: def.primaryMuscle, secondaryMuscles: def.secondaryMuscles,
         sets: def.defaultSets, reps: def.defaultReps, setReps: Array(def.defaultSets).fill(def.defaultReps),
-        setWeights: Array(def.defaultSets).fill(""), setFailure: Array(def.defaultSets).fill(false),
+        setWeights: Array(def.defaultSets).fill(""), setFailure: Array(def.defaultSets).fill(false), setNotes: Array(def.defaultSets).fill(""),
         restTime: def.defaultRest, equipment: def.equipment, category: def.category,
       });
     } else {
@@ -153,6 +156,7 @@ export default function WorkoutLogger({ preselectedMuscle, onSaved, onCancel }: 
               weight: ex.setWeights[i] || ex.weight || "",
               failure: ex.setFailure[i] || false,
               isTime: exIsStatic,
+              note: ex.setNotes[i] || "",
             }));
             return {
               name: ex.name, primaryMuscle: ex.primaryMuscle, secondaryMuscles: ex.secondaryMuscles,
@@ -431,7 +435,7 @@ function ExerciseInput({ exercise, index, searchTerm, onSearchChange, onUpdate, 
       {/* Quick templates */}
       <div className="flex gap-1 mb-2.5">
         {QUICK_TEMPLATES.map((t) => (
-          <button key={t.label} onClick={() => onUpdate({ sets: t.sets, reps: t.reps, setReps: Array(t.sets).fill(t.reps), setWeights: Array(t.sets).fill(""), setFailure: Array(t.sets).fill(false) })} className="text-[9px] font-medium px-2 py-0.5 rounded bg-white/[.03] text-dark-500 hover:bg-white/[.06] hover:text-dark-300 transition-colors border border-white/[.04]">{t.label}</button>
+          <button key={t.label} onClick={() => onUpdate({ sets: t.sets, reps: t.reps, setReps: Array(t.sets).fill(t.reps), setWeights: Array(t.sets).fill(""), setFailure: Array(t.sets).fill(false), setNotes: Array(t.sets).fill("") })} className="text-[9px] font-medium px-2 py-0.5 rounded bg-white/[.03] text-dark-500 hover:bg-white/[.06] hover:text-dark-300 transition-colors border border-white/[.04]">{t.label}</button>
         ))}
       </div>
 
@@ -473,6 +477,13 @@ function ExerciseInput({ exercise, index, searchTerm, onSearchChange, onUpdate, 
                 F
               </button>
             </div>
+          ))}
+        </div>
+        {/* Per-set notes (below the set rows) */}
+        <div className="space-y-0.5 mt-1">
+          {exercise.setReps.map((_, i) => (
+            <input key={`note-${i}`} type="text" value={exercise.setNotes[i] || ""} onChange={(e) => { const a = [...exercise.setNotes]; a[i] = e.target.value; onUpdate({ setNotes: a }); }}
+              placeholder={`S${i+1} note (optional)`} className="w-full bg-transparent border-b border-white/[.03] text-[8px] text-dark-500 py-0.5 px-1 outline-none focus:border-brand-500/30 placeholder:text-dark-800" />
           ))}
         </div>
       </div>

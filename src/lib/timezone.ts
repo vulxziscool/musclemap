@@ -1,31 +1,36 @@
-// All dates/times in the app use Eastern Time (America/New_York)
-const TZ = "America/New_York";
+// All dates/times in the app use the user's LOCAL browser timezone
+// This fixes the "one day behind" bug caused by UTC on servers
 
-export function nowET(): Date {
-  // Get current time formatted in ET, then parse it back
-  const str = new Date().toLocaleString("en-US", { timeZone: TZ });
-  return new Date(str);
+export function todayLocal(): string {
+  // Use Intl to get the user's actual local date parts
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
 
-export function todayET(): string {
-  // Returns YYYY-MM-DD in Eastern Time
-  const d = nowET();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+export function timeLocal(): string {
+  const now = new Date();
+  return `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
 }
 
-export function timeET(): string {
-  // Returns HH:MM in Eastern Time
-  const d = nowET();
-  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
-}
+// Keep old name as alias so nothing breaks
+export const todayET = todayLocal;
+export const timeET = timeLocal;
 
-export function formatDateET(dateStr: string): string {
-  // Format a date string for display in ET
+export function formatDateLocal(dateStr: string): string {
+  // Parse as local date (not UTC) by appending T12:00:00
   const d = new Date(dateStr + "T12:00:00");
-  return d.toLocaleDateString("en-US", { timeZone: TZ, weekday: "short", month: "short", day: "numeric" });
+  return d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
 }
 
-export function formatFullDateET(dateStr: string): string {
+export function formatFullDateLocal(dateStr: string): string {
   const d = new Date(dateStr + "T12:00:00");
-  return d.toLocaleDateString("en-US", { timeZone: TZ, month: "short", day: "numeric", year: "numeric" });
+  return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 }
+
+// Keep old names
+export const formatDateET = formatDateLocal;
+export const formatFullDateET = formatFullDateLocal;
+export const nowET = () => new Date();

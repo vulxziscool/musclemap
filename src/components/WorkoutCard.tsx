@@ -3,7 +3,7 @@
 import { MUSCLE_MAP, getRecoveryColor, getRecoveryStatus, getRecoveryLabel, formatTimeSince } from "@/lib/muscles";
 import { isStaticExercise, formatSetValue } from "@/lib/exercises";
 
-interface SetDetail { set: number; reps: number; weight: string; failure: boolean; isTime?: boolean; }
+interface SetDetail { set: number; reps: number; weight: string; failure: boolean; isTime?: boolean; note?: string; }
 interface Exercise { id: number; name: string; primaryMuscle: string; secondaryMuscles: string[]; sets: number; reps: number; weight: string | null; restTime: number | null; equipment: string | null; setDetails?: SetDetail[]; }
 interface Workout { id: number; name: string; date: string; time: string | null; duration: number | null; notes: string | null; exercises: Exercise[]; }
 
@@ -141,15 +141,18 @@ export default function WorkoutCard({ workout, isSelected, onSelect, onDelete }:
                         {details.map((sd, si) => {
                           const setIsTime = sd.isTime ?? exIsStatic;
                           return (
-                            <div key={si} className={`flex items-center gap-1 rounded px-1.5 py-0.5 ${sd.failure ? "bg-red-500/5" : "bg-black/15"}`}>
-                              <span className="text-[8px] text-dark-500 font-bold w-4 text-center">{sd.set}</span>
-                              <span className={`text-[9px] font-semibold tabular-nums flex-1 ${setIsTime ? "text-cyan-300" : "text-white"}`}>{formatSetValue(sd.reps, setIsTime)}</span>
-                              <span className="text-[9px] text-dark-300 font-medium tabular-nums w-14 text-center">{sd.weight || "BW"}</span>
-                              {sd.failure ? (
-                                <span className="w-4 text-center text-[7px] font-bold text-red-400">F</span>
-                              ) : (
-                                <span className="w-4 text-center text-dark-700 text-[7px]">—</span>
-                              )}
+                            <div key={si}>
+                              <div className={`flex items-center gap-1 rounded px-1.5 py-0.5 ${sd.failure ? "bg-red-500/5" : "bg-black/15"}`}>
+                                <span className="text-[8px] text-dark-500 font-bold w-4 text-center">{sd.set}</span>
+                                <span className={`text-[9px] font-semibold tabular-nums flex-1 ${setIsTime ? "text-cyan-300" : "text-white"}`}>{formatSetValue(sd.reps, setIsTime)}</span>
+                                <span className="text-[9px] text-dark-300 font-medium tabular-nums w-14 text-center">{sd.weight || "BW"}</span>
+                                {sd.failure ? (
+                                  <span className="w-4 text-center text-[7px] font-bold text-red-400">F</span>
+                                ) : (
+                                  <span className="w-4 text-center text-dark-700 text-[7px]">—</span>
+                                )}
+                              </div>
+                              {sd.note && <div className="text-[7px] text-dark-600 italic pl-5 -mt-px">{sd.note}</div>}
                             </div>
                           );
                         })}

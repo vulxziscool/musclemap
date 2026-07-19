@@ -23,6 +23,8 @@ import SmartTools from "@/components/SmartTools";
 import WorkoutExtras from "@/components/WorkoutExtras";
 import ProFeatures from "@/components/ProFeatures";
 import PainTracker from "@/components/PainTracker";
+import GymTools from "@/components/GymTools";
+import WorkoutCalendar from "@/components/WorkoutCalendar";
 import DeviceSync from "@/components/DeviceSync";
 import { RecoveryState, MUSCLE_MAP, REGIONS, type RegionId } from "@/lib/muscles";
 
@@ -70,7 +72,7 @@ export default function DashboardPage() {
   const highlightedMuscles = useMemo(() => { if (!selectedWorkout) return undefined; const w = workouts.find((w) => w.id === selectedWorkout); if (!w) return undefined; const r: Record<string, "primary" | "secondary"> = {}; for (const e of w.exercises) { r[e.primaryMuscle] = "primary"; for (const s of e.secondaryMuscles) { if (!r[s]) r[s] = "secondary"; } } return r; }, [selectedWorkout, workouts]);
 
   const now = new Date(); const weekStart = new Date(now); weekStart.setDate(now.getDate() - now.getDay()); weekStart.setHours(0, 0, 0, 0);
-  const weekWorkouts = workouts.filter((w) => new Date(w.date) >= weekStart);
+  const weekWorkouts = workouts.filter((w) => new Date(w.date + "T12:00:00") >= weekStart);
   const totalVolume = weekWorkouts.reduce((s, w) => s + w.exercises.reduce((a, e) => a + e.sets * e.reps, 0), 0);
   const recoveringCount = Object.values(recovery).filter((r) => r.status === "just_trained" || r.status === "recovering" || r.status === "almost_ready").length;
   const readyCount = Object.values(recovery).filter((r) => r.status === "fully_recovered" || r.status === "not_trained").length;
@@ -175,6 +177,8 @@ export default function DashboardPage() {
             <WorkoutExtras workouts={workouts} />
             <ProFeatures workouts={workouts} />
             <CalorieCounter />
+            <GymTools workouts={workouts} />
+            <WorkoutCalendar workouts={workouts} />
             <PainTracker />
             <InjuryPrevention />
             <DeviceSync />
@@ -221,9 +225,9 @@ export default function DashboardPage() {
 
           {mobileTab === "nutrition" && <div className="space-y-2 animate-fade-in"><CalorieCounter /></div>}
 
-          {mobileTab === "progress" && <div className="space-y-2 animate-fade-in"><PersonalProfile /><StreakCalendar workouts={workouts} /><Achievements workouts={workouts} totalWeight={totalWeightLifted} /><ExerciseHistory workouts={workouts} bodyWeight={userBodyWeight} gender={userGender} /><ProgressCharts /><ProgressPhotos /></div>}
+          {mobileTab === "progress" && <div className="space-y-2 animate-fade-in"><PersonalProfile /><WorkoutCalendar workouts={workouts} /><StreakCalendar workouts={workouts} /><Achievements workouts={workouts} totalWeight={totalWeightLifted} /><ExerciseHistory workouts={workouts} bodyWeight={userBodyWeight} gender={userGender} /><ProgressCharts /><ProgressPhotos /></div>}
 
-          {mobileTab === "more" && <div className="space-y-2 animate-fade-in"><RestTimer /><PainTracker /><SmartTools workouts={workouts} recovery={recovery} /><WorkoutExtras workouts={workouts} /><ProFeatures workouts={workouts} /><OneRMCalculator /><AIAssistant /><InjuryPrevention /><RecoveryRadar recovery={recovery} /><DeviceSync /></div>}
+          {mobileTab === "more" && <div className="space-y-2 animate-fade-in"><RestTimer /><GymTools workouts={workouts} /><PainTracker /><SmartTools workouts={workouts} recovery={recovery} /><WorkoutExtras workouts={workouts} /><ProFeatures workouts={workouts} /><OneRMCalculator /><AIAssistant /><InjuryPrevention /><RecoveryRadar recovery={recovery} /><DeviceSync /></div>}
         </div>
       </main>
 
