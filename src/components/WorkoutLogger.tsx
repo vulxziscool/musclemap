@@ -6,6 +6,51 @@ import { MUSCLES, MUSCLE_MAP } from "@/lib/muscles";
 import NumberStepper from "@/components/NumberStepper";
 import { triggerConfetti } from "@/components/Confetti";
 
+/* ─── Inline Rest Timer (lives inside the workout logger) ─── */
+function InlineRestTimer() {
+  const [restSec, setRestSec] = useState(90);
+  const [restRemaining, setRestRemaining] = useState(0);
+  const [restRunning, setRestRunning] = useState(false);
+  const PRESETS = [30, 60, 90, 120, 180];
+
+  useEffect(() => {
+    if (!restRunning) return;
+    const id = setInterval(() => {
+      setRestRemaining((p) => {
+        if (p <= 1) { setRestRunning(false); if (typeof navigator !== "undefined" && navigator.vibrate) navigator.vibrate([200, 100, 200, 100, 300]); return 0; }
+        return p - 1;
+      });
+    }, 1000);
+    return () => clearInterval(id);
+  }, [restRunning]);
+
+  const startRest = () => { setRestRemaining(restSec); setRestRunning(true); };
+  const rm = Math.floor(restRemaining / 60);
+  const rs = restRemaining % 60;
+  const finished = !restRunning && restRemaining === 0 && restSec > 0;
+
+  return (
+    <div className="flex items-center gap-2">
+      <div className="flex gap-0.5">
+        {PRESETS.map((s) => (
+          <button key={s} type="button" onClick={() => { setRestSec(s); if (!restRunning) setRestRemaining(0); }}
+            className={`text-[7px] font-medium px-1.5 py-0.5 rounded ${restSec === s && !restRunning ? "bg-sky-500/15 text-sky-400" : "bg-white/[.03] text-dark-600"}`}>
+            {s >= 60 ? `${s/60}m` : `${s}s`}
+          </button>
+        ))}
+      </div>
+      <span className={`text-[12px] font-bold tabular-nums min-w-[32px] text-center ${finished ? "text-green-400" : restRunning ? "text-sky-400" : "text-dark-500"}`}>
+        {restRunning || finished ? `${rm}:${String(rs).padStart(2, "0")}` : "Rest"}
+      </span>
+      {!restRunning ? (
+        <button type="button" onClick={startRest} className="text-[8px] font-semibold px-2 py-0.5 rounded bg-sky-600 text-white">Start</button>
+      ) : (
+        <button type="button" onClick={() => setRestRunning(false)} className="text-[8px] font-semibold px-2 py-0.5 rounded bg-red-600 text-white">Stop</button>
+      )}
+    </div>
+  );
+}
+
 interface ExerciseRow {
   id: string;
   name: string;
@@ -202,27 +247,21 @@ export default function WorkoutLogger({ preselectedMuscle, onSaved, onCancel }: 
         </div>
       )}
 
-      {/* Active Session Live Timer Bar */}
-      <div className="glass-inset rounded-lg p-2.5 mb-4 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span className="relative flex h-2.5 w-2.5">
-            {timerRunning && <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>}
-            <span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${timerRunning ? "bg-emerald-500" : "bg-amber-500"}`}></span>
-          </span>
-          <span className="text-dark-400 text-[10px] lg:text-[11px] font-medium">Active Session</span>
+      {/* Active Session Timer + Rest Timer Combined */}
+      <div className="glass-inset rounded-lg p-2 mb-3">
+        <div className="flex items-center justify-between mb-1.5">
+          <div className="flex items-center gap-1.5">
+            <span className="relative flex h-2 w-2">
+              {timerRunning && <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>}
+              <span className={`relative inline-flex rounded-full h-2 w-2 ${timerRunning ? "bg-emerald-500" : "bg-amber-500"}`}></span>
+            </span>
+            <span className="text-dark-500 text-[9px] font-medium">Session</span>
+            <span className="text-white text-[12px] font-bold tabular-nums">{Math.floor(elapsedSeconds / 60)}:{(elapsedSeconds % 60).toString().padStart(2, "0")}</span>
+          </div>
+          <button type="button" onClick={() => setTimerRunning(!timerRunning)} className="text-[9px] font-medium px-2 py-0.5 rounded bg-white/[.04] text-dark-400">{timerRunning ? "Pause" : "Resume"}</button>
         </div>
-        <div className="flex items-center gap-3">
-          <span className="text-white text-sm lg:text-base font-bold tabular-nums">
-            {Math.floor(elapsedSeconds / 60)}:{(elapsedSeconds % 60).toString().padStart(2, "0")}
-          </span>
-          <button
-            type="button"
-            onClick={() => setTimerRunning(!timerRunning)}
-            className="text-[10px] font-semibold px-2 py-1 rounded bg-white/[.04] text-dark-300 hover:text-white transition-colors"
-          >
-            {timerRunning ? "Pause" : "Resume"}
-          </button>
-        </div>
+        {/* Inline Rest Timer */}
+        <InlineRestTimer />
       </div>
 
       {/* Workout details */}
@@ -488,37 +527,98 @@ function ExerciseInput({ exercise, index, searchTerm, onSearchChange, onUpdate, 
         </div>
       </div>
 
-      {/* Target preview */}
-      {exercise.primaryMuscle && (
-        <div className="bg-black/20 rounded-lg p-2.5 border border-white/[.03]">
-          <div className="text-[10px] text-dark-500 uppercase tracking-wider font-medium mb-1.5 flex items-center gap-1">
-            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <circle cx="12" cy="12" r="10" /><circle cx="12" cy="12" r="6" /><circle cx="12" cy="12" r="2" />
-            </svg>
-            Target Preview
+      {/* Muscle Target Visual — Full Detail */}
+      {exercise.primaryMuscle && (() => {
+        const pm = MUSCLE_MAP[exercise.primaryMuscle];
+        const allTargeted = [exercise.primaryMuscle, ...exercise.secondaryMuscles];
+        const regionColors: Record<string, string> = { upper_push: "bg-blue-500/10 text-blue-400", upper_pull: "bg-emerald-500/10 text-emerald-400", lower_body: "bg-purple-500/10 text-purple-400", core: "bg-amber-500/10 text-amber-400" };
+        return (
+        <div className="bg-black/20 rounded-lg p-2 border border-white/[.03] space-y-2">
+          <div className="text-[9px] text-dark-500 uppercase tracking-wider font-medium flex items-center gap-1">
+            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><circle cx="12" cy="12" r="10" /><circle cx="12" cy="12" r="6" /><circle cx="12" cy="12" r="2" /></svg>
+            Muscles Targeted ({allTargeted.length})
           </div>
-          <div className="space-y-1.5">
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] text-orange-400 font-semibold w-11">Primary</span>
-              <span className="text-[11px] text-dark-200 w-18 truncate font-medium">{primaryMuscleName}</span>
-              <div className="flex-1 bar-track !h-[4px]">
-                <div className="h-full bg-orange-500 rounded-full" style={{ width: "100%" }} />
-              </div>
-              <span className="text-[10px] text-dark-500 tabular-nums font-medium">{totalTargetSets}s</span>
+
+          {/* All muscle tags */}
+          <div className="flex flex-wrap gap-0.5">
+            <span className="flex items-center gap-1 text-[8px] font-semibold bg-orange-500/15 text-orange-400 px-1.5 py-0.5 rounded">
+              <span className="w-1.5 h-1.5 rounded-full bg-orange-500" />{primaryMuscleName}<span className="text-orange-300/40 text-[6px] ml-0.5">PRIMARY</span>
+            </span>
+            {exercise.secondaryMuscles.map((mId) => (
+              <span key={mId} className="flex items-center gap-0.5 text-[8px] font-medium bg-yellow-500/10 text-yellow-400/80 px-1.5 py-0.5 rounded">
+                <span className="w-1 h-1 rounded-full bg-yellow-500/70" />{MUSCLE_MAP[mId]?.name || mId}
+              </span>
+            ))}
+          </div>
+
+          {/* Volume bars */}
+          <div className="space-y-0.5">
+            <div className="flex items-center gap-1.5">
+              <span className="text-[7px] text-dark-400 w-14 truncate">{primaryMuscleName}</span>
+              <div className="flex-1 bar-track !h-[3px]"><div className="h-full bg-orange-500 rounded-full" style={{ width: "100%" }} /></div>
+              <span className="text-[6px] text-dark-600">{totalTargetSets} sets · 100%</span>
             </div>
             {exercise.secondaryMuscles.map((mId) => (
-              <div key={mId} className="flex items-center gap-2">
-                <span className="text-[10px] text-yellow-400 font-semibold w-11">Assist</span>
-                <span className="text-[11px] text-dark-300 w-18 truncate font-medium">{MUSCLE_MAP[mId]?.name || mId}</span>
-                <div className="flex-1 bar-track !h-[4px]">
-                  <div className="h-full bg-yellow-500/70 rounded-full" style={{ width: "50%" }} />
-                </div>
-                <span className="text-[10px] text-dark-500 tabular-nums font-medium">{Math.ceil(totalTargetSets * 0.5)}s</span>
+              <div key={mId} className="flex items-center gap-1.5">
+                <span className="text-[7px] text-dark-500 w-14 truncate">{MUSCLE_MAP[mId]?.name || mId}</span>
+                <div className="flex-1 bar-track !h-[3px]"><div className="h-full bg-yellow-500/60 rounded-full" style={{ width: "50%" }} /></div>
+                <span className="text-[6px] text-dark-600">{Math.ceil(totalTargetSets * 0.5)} sets · 50%</span>
               </div>
             ))}
           </div>
+
+          {/* Primary muscle detail card */}
+          {pm && (
+            <div className="glass-inset rounded p-1.5 space-y-1">
+              <div className="flex items-center justify-between">
+                <span className="text-white text-[9px] font-semibold">{pm.name}</span>
+                <div className="flex gap-1">
+                  <span className={`text-[6px] font-medium px-1 py-px rounded capitalize ${regionColors[pm.region] || ""}`}>{pm.region.replace("_", " ")}</span>
+                  <span className="text-[6px] font-medium px-1 py-px rounded bg-white/[.04] text-dark-500 capitalize">{pm.view} view</span>
+                </div>
+              </div>
+              <p className="text-dark-500 text-[7px] leading-relaxed">{pm.description}</p>
+              <p className="text-dark-600 text-[7px]"><span className="text-dark-500 font-medium">Function:</span> {pm.function}</p>
+            </div>
+          )}
+
+          {/* Secondary muscle details */}
+          {exercise.secondaryMuscles.length > 0 && (
+            <div className="space-y-0.5">
+              <div className="text-[7px] text-dark-600 uppercase tracking-wider font-medium">Assisting Muscles</div>
+              {exercise.secondaryMuscles.map((mId) => {
+                const sm = MUSCLE_MAP[mId];
+                if (!sm) return null;
+                return (
+                  <div key={mId} className="glass-inset rounded p-1.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-dark-300 text-[8px] font-medium">{sm.name}</span>
+                      <div className="flex gap-1">
+                        <span className={`text-[6px] font-medium px-1 py-px rounded capitalize ${regionColors[sm.region] || ""}`}>{sm.region.replace("_", " ")}</span>
+                        <span className="text-[6px] font-medium px-1 py-px rounded bg-white/[.04] text-dark-600 capitalize">{sm.view}</span>
+                      </div>
+                    </div>
+                    <p className="text-dark-600 text-[7px] mt-0.5">{sm.function}</p>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Recommended exercises for this muscle */}
+          {pm && pm.recommendedExercises.length > 0 && (
+            <div>
+              <div className="text-[7px] text-dark-600 uppercase tracking-wider font-medium mb-0.5">Other {pm.name} Exercises</div>
+              <div className="flex flex-wrap gap-0.5">
+                {pm.recommendedExercises.filter((e) => e !== exercise.name).map((ex) => (
+                  <span key={ex} className="text-[7px] text-dark-500 bg-white/[.03] px-1.5 py-0.5 rounded">{ex}</span>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
-      )}
+        );
+      })()}
 
       {/* Equipment badge */}
       {exercise.equipment && (

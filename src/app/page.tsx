@@ -25,13 +25,14 @@ import ProFeatures from "@/components/ProFeatures";
 import PainTracker from "@/components/PainTracker";
 import GymTools from "@/components/GymTools";
 import WorkoutCalendar from "@/components/WorkoutCalendar";
+import CalisthenicsSkills from "@/components/CalisthenicsSkills";
 import DeviceSync from "@/components/DeviceSync";
 import { RecoveryState, MUSCLE_MAP, REGIONS, type RegionId } from "@/lib/muscles";
 
 interface Exercise { id: number; name: string; primaryMuscle: string; secondaryMuscles: string[]; sets: number; reps: number; weight: string | null; restTime: number | null; equipment: string | null; }
 interface Workout { id: number; name: string; date: string; time: string | null; duration: number | null; notes: string | null; exercises: Exercise[]; }
 type FilterId = "all" | RegionId;
-type MobileTab = "map" | "workouts" | "progress" | "nutrition" | "more";
+type MobileTab = "map" | "workouts" | "skills" | "nutrition" | "progress" | "more";
 
 export default function DashboardPage() {
   const [recovery, setRecovery] = useState<Record<string, RecoveryState>>({});
@@ -164,6 +165,7 @@ export default function DashboardPage() {
             {selectedMuscle && <MuscleInspector muscleId={selectedMuscle} recovery={recovery[selectedMuscle] || null} onTrain={handleTrain} />}
             {showRadar && <RecoveryRadar recovery={recovery} />}
             {!selectedMuscle && !showRadar && <div className="glass-card rounded-xl p-5 text-center"><p className="text-dark-500 text-xs">Select a muscle on the body map.</p></div>}
+            <CalisthenicsSkills />
             <RestTimer />
             <SmartTools workouts={workouts} recovery={recovery} />
             <Achievements workouts={workouts} totalWeight={totalWeightLifted} />
@@ -189,6 +191,26 @@ export default function DashboardPage() {
         <div className="lg:hidden overflow-x-hidden">
           {mobileTab === "map" && (
             <div className="space-y-2 animate-fade-in">
+              {/* Daily Recommendation */}
+              {(() => {
+                const ready = Object.values(recovery).filter((r) => r.status === "fully_recovered" || r.status === "not_trained" || r.status === "almost_ready");
+                const regions: Record<string, number> = {};
+                ready.forEach((r) => { const m = MUSCLE_MAP[r.muscleId]; if (m) regions[m.region] = (regions[m.region] || 0) + 1; });
+                const best = Object.entries(regions).sort((a, b) => b[1] - a[1])[0];
+                const labels: Record<string, string> = { upper_push: "Push Day", upper_pull: "Pull Day", lower_body: "Leg Day", core: "Core Day" };
+                const colors: Record<string, string> = { upper_push: "text-blue-400 bg-blue-500/10", upper_pull: "text-emerald-400 bg-emerald-500/10", lower_body: "text-purple-400 bg-purple-500/10", core: "text-amber-400 bg-amber-500/10" };
+                const suggestion = best ? labels[best[0]] || "Full Body" : "Rest Day";
+                const clr = best ? colors[best[0]] || "text-brand-400 bg-brand-500/10" : "text-dark-400 bg-white/[.04]";
+                return (
+                  <div className="glass-card rounded-lg p-2 flex items-center justify-between">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[9px] text-dark-500">Today&apos;s rec:</span>
+                      <span className={`text-[10px] font-semibold px-2 py-0.5 rounded ${clr}`}>{suggestion}</span>
+                    </div>
+                    <span className="text-[8px] text-dark-600">{ready.length} muscles ready</span>
+                  </div>
+                );
+              })()}
               <div className="glass-card rounded-lg p-2">
                 {/* Filters — scrollable row */}
                 <div className="flex gap-1 mb-1.5 overflow-x-auto no-scrollbar">
@@ -225,25 +247,28 @@ export default function DashboardPage() {
 
           {mobileTab === "nutrition" && <div className="space-y-2 animate-fade-in"><CalorieCounter /></div>}
 
+          {mobileTab === "skills" && <div className="space-y-2 animate-fade-in"><CalisthenicsSkills /></div>}
+
           {mobileTab === "progress" && <div className="space-y-2 animate-fade-in"><PersonalProfile /><WorkoutCalendar workouts={workouts} /><StreakCalendar workouts={workouts} /><Achievements workouts={workouts} totalWeight={totalWeightLifted} /><ExerciseHistory workouts={workouts} bodyWeight={userBodyWeight} gender={userGender} /><ProgressCharts /><ProgressPhotos /></div>}
 
           {mobileTab === "more" && <div className="space-y-2 animate-fade-in"><RestTimer /><GymTools workouts={workouts} /><PainTracker /><SmartTools workouts={workouts} recovery={recovery} /><WorkoutExtras workouts={workouts} /><ProFeatures workouts={workouts} /><OneRMCalculator /><AIAssistant /><InjuryPrevention /><RecoveryRadar recovery={recovery} /><DeviceSync /></div>}
         </div>
       </main>
 
-      {/* ─── MOBILE BOTTOM NAV ─── */}
+      {/* ─── MOBILE BOTTOM NAV — 6 tabs with scroll-safe layout ─── */}
       <nav className="mobile-nav lg:hidden">
-        <div className="grid grid-cols-5 px-2 py-1 pb-safe">
+        <div className="grid grid-cols-6 px-1 py-1 pb-safe gap-0">
           {([
             { id: "map" as MobileTab, label: "Map", d: "M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" },
             { id: "workouts" as MobileTab, label: "Train", d: "M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" },
+            { id: "skills" as MobileTab, label: "Skills", d: "M13 10V3L4 14h7v7l9-11h-7z" },
             { id: "nutrition" as MobileTab, label: "Food", d: "M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z" },
             { id: "progress" as MobileTab, label: "Stats", d: "M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" },
             { id: "more" as MobileTab, label: "More", d: "M12 5v.01M12 12v.01M12 19v.01" },
           ]).map((t) => (
             <button key={t.id} onClick={() => setMobileTab(t.id)} className={`flex flex-col items-center justify-center py-1 rounded transition-all ${mobileTab === t.id ? "text-brand-400" : "text-dark-600"}`}>
-              <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={mobileTab === t.id ? 2.2 : 1.5}><path strokeLinecap="round" strokeLinejoin="round" d={t.d} /></svg>
-              <span className="text-[7px] font-medium mt-px leading-none">{t.label}</span>
+              <svg className="w-[16px] h-[16px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={mobileTab === t.id ? 2.2 : 1.4}><path strokeLinecap="round" strokeLinejoin="round" d={t.d} /></svg>
+              <span className="text-[6px] font-medium mt-px leading-none tracking-wide">{t.label}</span>
             </button>
           ))}
         </div>
